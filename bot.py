@@ -3,7 +3,7 @@ import sys
 import tweepy
 from pprint import pprint
 
-from itww_chicago import get_tweet
+from itww import get_tweet
 
 LOCAL_DEVELOPMENT = True
 
