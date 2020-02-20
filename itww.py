@@ -88,12 +88,79 @@ def get_historical_temps(place):
         except KeyError:
             temps_by_year[year] = [int(temp)]
 
-    average_temps = {year: (list_average(temps) * 0.18 + 32) for year, temps in temps_by_year.items()}
+    historical_average_temps = {year: (list_average(temps) * 0.18 + 32) for year, temps in temps_by_year.items()}
 
-    return average_temps
+    return historical_average_temps
 
 
 def write_tweet(daily_temp, historical_temps):
-    return "The average temperature in Chicago for the last day was {}ºF.".format(round(daily_temp))
+    total_years = len(historical_temps)
+    warmer_years = [temp for year, temp in historical_temps.items() if temp < daily_temp]
+    percent_warmer = len(warmer_years) / len(historical_temps) * 100
+
+    warm_bool = percent_warmer >= 50
+
+    if warm_bool:
+        percent_relative = round(percent_warmer)
+    else:
+        percent_relative = round(100 - percent_warmer)
+
+    record = False
+
+    if percent_relative >= 97.5:
+        weirdness_level = 3
+        record = True
+    elif percent_relative >= 90:
+        weirdness_level = 2
+    elif percent_relative >= 80:
+        weirdness_level = 1
+    else:
+        weirdness_level = 0
+
+    weirdness_levels = [
+        'typical',
+        'a bit weird',
+        'weird',
+        'very weird',
+    ]
+
+    comparisons = [
+        ['colder', 'coldest'],
+        ['warmer', 'warmest']
+    ]
+
+    daily_temp = round(daily_temp)
+    month = END_TIME.month_name()
+    day = END_TIME.day
+
+    weirdness = weirdness_levels[weirdness_level]
+    comparison = comparisons[warm_bool][(weirdness == 3)]
+
+    sentence1 = 'The weather in {city} is {weirdness} today.'.format(
+        city=CITY,
+        weirdness=weirdness
+    )
+
+    if not record:
+        sentence2 = 'It\'s {daily_temp}ºF, {comparison} than {percent_relative}% of {month} {day} temperatures on record.'.format(
+            daily_temp=daily_temp,
+            comparison=comparison,
+            percent_relative=percent_relative,
+            month=month,
+            day=day,
+        )
+    else:
+        sentence2 = 'It\'s {daily_temp}ºF, the {comparison} {month} {day} temperature on record.'.format(
+            daily_temp=daily_temp,
+            comparison=comparison,
+            percent_relative=percent_relative,
+            month=month,
+            day=day,
+        )
+
+    return '{sentence1} {sentence2}'.format(
+        sentence1=sentence1,
+        sentence2=sentence2,
+    )
 
 print(get_tweet())
