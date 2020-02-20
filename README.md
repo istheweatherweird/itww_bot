@@ -1,6 +1,6 @@
 # ⛈ Is the Weather Weird in Chicago?
 
-A Twitter bot for [istheweatherweird.com](http://www.istheweatherweird.com/) using Chicago data.
+A Twitter bot for [istheweatherweird.com](http://www.istheweatherweird.com/), keeping an eye on Chicago. Current data is pulled from the [National Weather Service API](https://www.weather.gov/documentation/services-web-api). 
 
 Uses Python, tweepy, and Heroku. S/o to [this post](https://dev.to/emcain/how-to-set-up-a-twitter-bot-with-python-and-heroku-1n39) by [Emily Cain](https://emcain.github.io/) for the guiding method.
 
@@ -49,4 +49,4 @@ To get started, run the following from your terminal:
   docker-compose run --rm app python bot.py
   ```
 
-If successful, this will post a tweet. 
+If successful, this will post a tweet.
