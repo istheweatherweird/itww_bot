@@ -3,7 +3,7 @@ import sys
 import tweepy
 from pprint import pprint
 
-from itww import get_tweet
+from tweets import get_tweets
 
 LOCAL_DEVELOPMENT = False
 
@@ -22,5 +22,5 @@ auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
 api = tweepy.API(auth)
 
-tweet = get_tweet()
+tweet = get_tweets()
 api.update_status(tweet)

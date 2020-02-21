@@ -11,7 +11,7 @@ START_TIME = Timestamp.utcnow().replace(microsecond=0) - Timedelta(days=1)
 END_TIME = Timestamp.utcnow().replace(microsecond=0)
 
 
-def get_tweet():
+def get_tweets():
     place = get_place(CITY)
 
     daily_temp = get_daily_temp(place)
@@ -88,7 +88,10 @@ def get_historical_temps(place):
         except KeyError:
             temps_by_year[year] = [int(temp)]
 
-    historical_average_temps = {year: (list_average(temps) * 0.18 + 32) for year, temps in temps_by_year.items()}
+    historical_average_temps = {
+        year: (list_average(temps) * 0.18 + 32)
+        for year, temps in temps_by_year.items()
+    }
 
     return historical_average_temps
 
@@ -163,4 +166,5 @@ def write_tweet(place, daily_temp, historical_temps):
         sentence2=sentence2,
     )
 
-print(get_tweet())
+# for testing in local development
+print(get_tweets())

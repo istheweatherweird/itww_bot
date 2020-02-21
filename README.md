@@ -48,7 +48,13 @@ To get started, run the following from your terminal:
 5. Run the app locally!
 
   ```bash
-  docker-compose run --rm app python bot.py
+  docker-compose run --rm app python tweets.py
   ```
 
-If successful, this will post a tweet.
+If successful, you'll see your tweet(s) in the terminal.
+
+To test posting to Twitter:
+
+  ```bash
+  docker-compose run --rm app python bot.py
+  ```
