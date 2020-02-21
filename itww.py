@@ -17,7 +17,7 @@ def get_tweet():
     daily_temp = get_daily_temp(place)
     historical_temps = get_historical_temps(place)
 
-    tweet = write_tweet(daily_temp, historical_temps)
+    tweet = write_tweet(place, daily_temp, historical_temps)
 
     return tweet
 
@@ -93,7 +93,7 @@ def get_historical_temps(place):
     return historical_average_temps
 
 
-def write_tweet(daily_temp, historical_temps):
+def write_tweet(place, daily_temp, historical_temps):
     total_years = len(historical_temps)
     warmer_years = [temp for year, temp in historical_temps.items() if temp < daily_temp]
     percent_warmer = len(warmer_years) / len(historical_temps) * 100
@@ -130,8 +130,8 @@ def write_tweet(daily_temp, historical_temps):
     ]
 
     daily_temp = round(daily_temp)
-    month = END_TIME.month_name()
-    day = END_TIME.day
+    month = END_TIME.tz_convert(place['TZ']).month_name()
+    day = END_TIME.tz_convert(place['TZ']).day
 
     weirdness = weirdness_levels[weirdness_level]
     comparison = comparisons[warm_bool][(weirdness == 3)]
