@@ -132,6 +132,8 @@ def write_tweet(place, daily_temp, historical_temps):
         ['warmer', 'warmest']
     ]
 
+    emoji_list = ['❄️','🔥']
+
     daily_temp = round(daily_temp)
     month = END_TIME.tz_convert(place['TZ']).month_name()
     day = END_TIME.tz_convert(place['TZ']).day
@@ -139,7 +141,13 @@ def write_tweet(place, daily_temp, historical_temps):
     weirdness = weirdness_levels[weirdness_level]
     comparison = comparisons[warm_bool][(weirdness == 3)]
 
-    sentence1 = 'The weather in {city} is {weirdness} today.'.format(
+    if weirdness_level:
+        emoji = emoji_list[warm_bool] * weirdness_level + ' '
+    else:
+        emoji = ''
+
+    sentence1 = '{emoji}The weather in {city} is {weirdness} today.'.format(
+        emoji=emoji,
         city=CITY,
         weirdness=weirdness
     )
