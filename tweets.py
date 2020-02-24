@@ -1,7 +1,7 @@
 import requests
 import csv
 from pandas import Timestamp, Timedelta
-from utils import list_average
+from utils import list_average, get_reader
 
 DATA_URL = 'https://www.istheweatherweird.com/istheweatherweird-data-hourly'
 STATIONS_URL = '{}/csv/stations.csv'.format(DATA_URL)
@@ -13,13 +13,23 @@ END_TIME = Timestamp.utcnow().replace(microsecond=0)
 
 def get_tweets():
     place = get_place(CITY)
+    local_time = END_TIME.tz_convert(place['TZ'])
 
-    daily_temp = get_daily_temp(place)
-    historical_temps = get_historical_temps(place)
+    tweets = []
 
-    tweet = write_tweet(place, daily_temp, historical_temps)
+    # check if 6pm <= current local time < 7pm
+    # this is intended to run every hour through the Heroku scheduler
+    if local_time.floor(freq='h').hour == 18:
+        daily_temp = get_daily_temp(place)
+        historical_temps = get_historical_temps(place, local_time)
 
-    return tweet
+        tweet = write_tweet(place, local_time, daily_temp, historical_temps)
+        tweets += [tweet]
+
+        if local_time.day_name() == 'Sunday':
+            print("Calculate weekly average here TK")
+
+    return tweets
 
 
 def get_place(city):
@@ -67,22 +77,79 @@ def get_daily_temp(place):
 
     return average_fahrenheit
 
-# This currently calculates the average temperature for the current day
-def get_historical_temps(place):
-    historical_data_url = "{data_url}/csv/{id}/{month}{day}.csv".format(
+def get_historical_temps(place, local_time):
+    place_id = place['USAF'] + "-" + place['WBAN']
+
+    current_day_url = "{data_url}/csv/{id}/{month}{day}.csv".format(
         data_url=DATA_URL,
-        id=place['USAF'] + "-" + place['WBAN'],
+        id=place_id,
         month='{:02}'.format(END_TIME.month),
         day='{:02}'.format(END_TIME.day)
     )
-    response = requests.get(historical_data_url)
-    lines = (line.decode('utf-8') for line in response.iter_lines())
-    reader = csv.reader(lines)
-    next(reader, None)  # skip the headers
+
+    current_day = get_reader(current_day_url)
+
+    # we want 24 hours of weather data starting ending at 6pm today local time
+    tz_offset = int(local_time.utcoffset().total_seconds() / 3600)
+    additional_hours_needed = -6 - tz_offset
+
+    if additional_hours_needed < 0:
+        # we need to grab the previous day's sheet as well and take the last
+        # additional_hours_needed hours for each year
+        previous_day = END_TIME - Timedelta(days=1)
+        previous_day_url = "{data_url}/csv/{id}/{month}{day}.csv".format(
+            data_url=DATA_URL,
+            id=place_id,
+            month='{:02}'.format(previous_day.month),
+            day='{:02}'.format(previous_day.day)
+        )
+
+        previous_day_filtered = [
+            row for row
+            in get_reader(previous_day_url)
+            if int(row[1]) >= (24 + additional_hours_needed)
+        ]
+
+        current_day_filtered = [
+            row for row
+            in get_reader(previous_day_url)
+            if int(row[1]) < (24 + additional_hours_needed)
+        ]
+
+        adjusted_day = previous_day_filtered + current_day_filtered
+
+    elif additional_hours_needed > 0:
+        # we need to grab the next day's sheet as well and take the first
+        # additional_hours_needed hours for each year
+        next_day = END_TIME + Timedelta(days=1)
+        next_day_url = "{data_url}/csv/{id}/{month}{day}.csv".format(
+            data_url=DATA_URL,
+            id=place_id,
+            month='{:02}'.format(next_day.month),
+            day='{:02}'.format(next_day.day)
+        )
+
+        next_day_filtered = [
+            row for row
+            in get_reader(next_day_url)
+            if int(row[1]) <= additional_hours_needed
+        ]
+
+        current_day_filtered = [
+            row for row
+            in get_reader(next_day_url)
+            if int(row[1]) > additional_hours_needed
+        ]
+
+        adjusted_day = next_day_filtered + current_day_filtered
+
+    else:
+        # use the current day's sheet
+        adjusted_day = current_day
 
     temps_by_year = {}
-    for line in reader:
-        [year, hour, temp] = list(line)
+    for row in adjusted_day:
+        [year, hour, temp] = list(row)
         try:
             temps_by_year[year] = temps_by_year[year] + [int(temp)]
         except KeyError:
@@ -96,7 +163,7 @@ def get_historical_temps(place):
     return historical_average_temps
 
 
-def write_tweet(place, daily_temp, historical_temps):
+def write_tweet(place, local_time, daily_temp, historical_temps):
     total_years = len(historical_temps)
     warmer_years = [temp for year, temp in historical_temps.items() if temp < daily_temp]
     percent_warmer = len(warmer_years) / len(historical_temps) * 100
@@ -121,7 +188,7 @@ def write_tweet(place, daily_temp, historical_temps):
         weirdness_level = 0
 
     weirdness_levels = [
-        'typical',
+        'pretty typical',
         'a bit weird',
         'weird',
         'very weird',
@@ -135,8 +202,8 @@ def write_tweet(place, daily_temp, historical_temps):
     emoji_list = ['❄️','🔥']
 
     daily_temp = round(daily_temp)
-    month = END_TIME.tz_convert(place['TZ']).month_name()
-    day = END_TIME.tz_convert(place['TZ']).day
+    month = local_time.month_name()
+    day = local_time.day
 
     weirdness = weirdness_levels[weirdness_level]
     comparison = comparisons[warm_bool][(weirdness == 3)]

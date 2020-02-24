@@ -47,14 +47,18 @@ To get started, run the following from your terminal:
 
 5. Run the app locally!
 
+To preview your tweet(s) locally:
+
   ```bash
   docker-compose run --rm app python tweets.py
   ```
 
-If successful, you'll see your tweet(s) in the terminal.
+If successful, you'll see them in the terminal.
 
 To test posting to Twitter:
 
   ```bash
   docker-compose run --rm app python bot.py
   ```
+
+If successful, you'll see them posted to the Twitter account whose keys you specified in `secrets.py`.

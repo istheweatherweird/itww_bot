@@ -22,5 +22,8 @@ auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
 api = tweepy.API(auth)
 
-tweet = get_tweets()
-api.update_status(tweet)
+tweets = get_tweets()
+
+if len(tweets) > 0:
+    for tweet in tweets:
+        api.update_status(tweet)
