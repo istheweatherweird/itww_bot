@@ -2,8 +2,9 @@ import time
 import sys
 import tweepy
 from pprint import pprint
+from pandas import Timestamp
 
-from tweets import get_tweets
+from tweets import get_tweets, get_place
 
 LOCAL_DEVELOPMENT = False
 
@@ -23,8 +24,12 @@ auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
 api = tweepy.API(auth)
 
-tweets = get_tweets(CITY)
+place = get_place(CITY)
+current_time = Timestamp.now(tz=place['TZ'])
 
-if len(tweets) > 0:
+# check if 6pm <= current local time < 7pm
+# this is intended to run every hour through the Heroku scheduler
+if current_time.hour == 18:
+    tweets = get_tweets(CITY)
     for tweet in tweets:
         api.update_status(tweet)

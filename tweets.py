@@ -13,21 +13,13 @@ def get_tweets(city):
     end_time = Timestamp.today(tz=place['TZ']).replace(hour=18).floor(freq='h').tz_convert(tz='UTC')
     start_time = end_time - Timedelta(days=1)
 
-    current_time = Timestamp.now(tz=place['TZ'])
-
     tweets = []
 
-    # check if 6pm <= current local time < 7pm
-    # this is intended to run every hour through the Heroku scheduler
-    if current_time.hour == 18:
-        daily_temp = get_daily_temp(place, start_time, end_time)
-        historical_temps = get_historical_temps(place, start_time, end_time)
+    daily_temp = get_daily_temp(place, start_time, end_time)
+    historical_temps = get_historical_temps(place, start_time, end_time)
 
-        tweet = write_tweet(place, end_time, daily_temp, historical_temps)
-        tweets += [tweet]
-
-        if current_time.day_name() == 'Sunday':
-            print("Calculate weekly average here TK")
+    tweet = write_tweet(place, end_time, daily_temp, historical_temps)
+    tweets += [tweet]
 
     return tweets
 
@@ -80,74 +72,45 @@ def get_daily_temp(place, start_time, end_time):
 def get_historical_temps(place, start_time, end_time):
     place_id = place['USAF'] + "-" + place['WBAN']
 
-    current_day_url = "{data_url}/csv/{id}/{month}{day}.csv".format(
+    end_day_url = "{data_url}/csv/{id}/{month}{day}.csv".format(
         data_url=DATA_URL,
         id=place_id,
         month='{:02}'.format(end_time.month),
         day='{:02}'.format(end_time.day)
     )
 
-    current_day = get_reader(current_day_url)
+    end_day = get_reader(end_day_url)
 
-    tz_offset = int(end_time.utcoffset().total_seconds() / 3600)
-    additional_hours_needed = -6 - tz_offset
-
-    if additional_hours_needed < 0:
-        # we need to grab the previous day's sheet as well and take the last
-        # additional_hours_needed hours for each year
-        previous_day = end_time - Timedelta(days=1)
-        previous_day_url = "{data_url}/csv/{id}/{month}{day}.csv".format(
-            data_url=DATA_URL,
-            id=place_id,
-            month='{:02}'.format(previous_day.month),
-            day='{:02}'.format(previous_day.day)
-        )
-
-        previous_day_filtered = [
-            row for row
-            in get_reader(previous_day_url)
-            if int(row[1]) >= (24 + additional_hours_needed)
-        ]
-
-        current_day_filtered = [
-            row for row
-            in get_reader(previous_day_url)
-            if int(row[1]) < (24 + additional_hours_needed)
-        ]
-
-        adjusted_day = previous_day_filtered + current_day_filtered
-
-    elif additional_hours_needed > 0:
-        # we need to grab the next day's sheet as well and take the first
-        # additional_hours_needed hours for each year
-        next_day = end_time + Timedelta(days=1)
-        next_day_url = "{data_url}/csv/{id}/{month}{day}.csv".format(
-            data_url=DATA_URL,
-            id=place_id,
-            month='{:02}'.format(next_day.month),
-            day='{:02}'.format(next_day.day)
-        )
-
-        next_day_filtered = [
-            row for row
-            in get_reader(next_day_url)
-            if int(row[1]) <= additional_hours_needed
-        ]
-
-        current_day_filtered = [
-            row for row
-            in get_reader(next_day_url)
-            if int(row[1]) > additional_hours_needed
-        ]
-
-        adjusted_day = next_day_filtered + current_day_filtered
-
+    if start_time.date() == end_time.date() - Timedelta(1, 'm'):
+        # use just the current day's sheet
+        current_day_offset = end_day
     else:
-        # use the current day's sheet
-        adjusted_day = current_day
+        # otherwise, we'll need to pull in two days of temperature records
+        tz_offset = start_time.hour
+
+        start_day_url = "{data_url}/csv/{id}/{month}{day}.csv".format(
+            data_url=DATA_URL,
+            id=place_id,
+            month='{:02}'.format(start_time.month),
+            day='{:02}'.format(start_time.day)
+        )
+
+        start_day_filtered = [
+            row for row
+            in get_reader(start_day_url)
+            if int(row[1]) >= tz_offset
+        ]
+
+        end_day_filtered = [
+            row for row
+            in end_day
+            if int(row[1]) < tz_offset
+        ]
+
+        current_day_offset = start_day_filtered + end_day_filtered
 
     temps_by_year = {}
-    for row in adjusted_day:
+    for row in current_day_offset:
         [year, hour, temp] = list(row)
         try:
             temps_by_year[year] = temps_by_year[year] + [int(temp)]
