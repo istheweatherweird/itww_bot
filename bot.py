@@ -17,12 +17,13 @@ else:
     CONSUMER_SECRET = environ['CONSUMER_SECRET']
     ACCESS_KEY = environ['ACCESS_KEY']
     ACCESS_SECRET = environ['ACCESS_SECRET']
+    CITY = environ['CITY']
 
 auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
 api = tweepy.API(auth)
 
-tweets = get_tweets()
+tweets = get_tweets(CITY)
 
 if len(tweets) > 0:
     for tweet in tweets:

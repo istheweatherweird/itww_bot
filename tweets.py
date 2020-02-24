@@ -6,13 +6,11 @@ from utils import list_average, get_reader
 DATA_URL = 'https://www.istheweatherweird.com/istheweatherweird-data-hourly'
 STATIONS_URL = '{}/csv/stations.csv'.format(DATA_URL)
 
-CITY = 'Chicago'
 START_TIME = Timestamp.utcnow().replace(microsecond=0) - Timedelta(days=1)
 END_TIME = Timestamp.utcnow().replace(microsecond=0)
 
-
-def get_tweets():
-    place = get_place(CITY)
+def get_tweets(city):
+    place = get_place(city)
     local_time = END_TIME.tz_convert(place['TZ'])
 
     tweets = []
@@ -69,9 +67,7 @@ def get_observations(place):
 # however, the observations aren't necessarily spaced equally throughout
 # the day. do something more sophisticated later!
 def get_daily_temp(place):
-    observations = get_observations(place)
-
-    temps = [temp for (timestamp, temp) in observations]
+    temps = [temp for (timestamp, temp) in observations if temp]
     average = list_average(temps)
     average_fahrenheit = average * 1.8 + 32
 
@@ -215,7 +211,7 @@ def write_tweet(place, local_time, daily_temp, historical_temps):
 
     sentence1 = '{emoji}The weather in {city} is {weirdness} today.'.format(
         emoji=emoji,
-        city=CITY,
+        city=place['place'],
         weirdness=weirdness
     )
 
@@ -242,4 +238,4 @@ def write_tweet(place, local_time, daily_temp, historical_temps):
     )
 
 # for testing in local development
-print(get_tweets())
+print(get_tweets('Chicago'))
