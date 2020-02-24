@@ -85,7 +85,7 @@ def get_historical_temps(place, local_time):
 
     current_day = get_reader(current_day_url)
 
-    # we want 24 hours of weather data starting ending at 6pm today local time
+    # we want the last 24 hours of weather data, ending at 6pm today local time
     tz_offset = int(local_time.utcoffset().total_seconds() / 3600)
     additional_hours_needed = -6 - tz_offset
 
