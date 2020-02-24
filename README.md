@@ -62,3 +62,19 @@ To test posting to Twitter:
   ```
 
 If successful, you'll see them posted to the Twitter account whose keys you specified in `secrets.py`.
+
+## Setting up a bot for a new location
+
+This Twitter bot is easy to set up for any location with an entry in [this spreadsheet](https://github.com/istheweatherweird/istheweatherweird-data-hourly/blob/master/csv/stations.csv)! If you'd like to get another one added, you're welcome to open an issue in this repo with the request.
+
+Follow these steps to start a Twitter bot for one of the locations in the above spreadsheet:
+
+1. Update your local `secrets.py` file so `CITY` matches one of the values in [this sheet's](https://github.com/istheweatherweird/istheweatherweird-data-hourly/blob/master/csv/stations.csv) `place` column.
+1. Start a new Twitter account with your desired name.
+2. Logged in as that Twitter account, visit https://developer.twitter.com/en/apps and go through the steps there to Create a New App.
+3. Once you've completed Twitter's application, you'll be prompted to create Consumer API keys and an Access Token and Access Token Secret. Add those to your local `secrets.py` file.
+4. Log into Heroku and create a new app.
+5. Go into Heroku `Settings` -> `Config Variables` and copy over your `secrets.py` file variables.
+6. Back in your Heroku `Overview` tab, add a new Installed add-on. Select Heroku Scheduler, and set it to run `python bot.py` every hour on the hour.
+
+That's it! Your bot should now tweet every day at 6pm local time!
