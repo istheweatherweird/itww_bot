@@ -1,6 +1,6 @@
-# ⛈ Is the Weather Weird in Chicago?
+# ⛈ Is the Weather Weird?
 
-A Twitter bot for [istheweatherweird.com](http://www.istheweatherweird.com/), keeping an eye on Chicago.
+A Twitter bot for [istheweatherweird.com](http://www.istheweatherweird.com/), keeping an eye on various cities.
 
 Uses Python, tweepy, and Heroku. S/o to [this post](https://dev.to/emcain/how-to-set-up-a-twitter-bot-with-python-and-heroku-1n39) by [Emily Cain](https://emcain.github.io/) for the guiding method. Current data is pulled from the [National Weather Service API](https://www.weather.gov/documentation/services-web-api).
 
@@ -47,21 +47,21 @@ To get started, run the following from your terminal:
 
 5. Run the app locally!
 
-To preview your tweet(s) locally:
+  To preview your tweet(s) locally:
 
-  ```bash
-  docker-compose run --rm app python tweets.py
-  ```
+    ```bash
+    docker-compose run --rm app python tweets.py
+    ```
 
-If successful, you'll see them in the terminal.
+  If successful, you'll see them in the terminal.
 
-To test posting to Twitter:
+  To test posting to Twitter:
 
-  ```bash
-  docker-compose run --rm app python bot.py
-  ```
+    ```bash
+    docker-compose run --rm app python bot.py
+    ```
 
-If successful, you'll see them posted to the Twitter account whose keys you specified in `secrets.py`.
+  If successful, you'll see them posted to the Twitter account whose keys you specified in `secrets.py`.
 
 ## Setting up a bot for a new location
 

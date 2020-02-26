@@ -8,7 +8,7 @@ from tweets import get_tweets, get_place
 
 cities = ['Chicago']
 
-LOCAL_DEVELOPMENT = True
+LOCAL_DEVELOPMENT = False
 
 for city in cities:
     place = get_place(city)
@@ -49,4 +49,4 @@ for city in cities:
         for tweet in tweets:
             api.update_status(tweet)
     except (tweepy.error.TweepError, NameError) as e:
-        print('Not posted to Twitter! Error: {}'.format(e))
+        print('\nNot posted to Twitter!\n\nError: {}\n'.format(e))
