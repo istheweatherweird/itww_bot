@@ -6,9 +6,7 @@ from utils import list_average, get_reader
 DATA_URL = 'https://www.istheweatherweird.com/istheweatherweird-data-hourly'
 STATIONS_URL = '{}/csv/stations.csv'.format(DATA_URL)
 
-def get_tweets(city):
-    place = get_place(city)
-
+def get_tweets(place):
     # UTC values for 6pm local time yesterday - 6pm local time today
     end_time = Timestamp.today(tz=place['TZ']).replace(hour=18).floor(freq='h').tz_convert(tz='UTC')
     start_time = end_time - Timedelta(days=1)
@@ -202,6 +200,3 @@ def write_tweet(place, end_time, daily_temp, historical_temps):
         sentence1=sentence1,
         sentence2=sentence2,
     )
-
-# for testing in local development
-print(get_tweets('Atlanta'))

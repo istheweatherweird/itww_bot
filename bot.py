@@ -6,30 +6,47 @@ from pandas import Timestamp
 
 from tweets import get_tweets, get_place
 
-LOCAL_DEVELOPMENT = False
+cities = ['Chicago']
 
-if LOCAL_DEVELOPMENT:
-    from secrets import *
+LOCAL_DEVELOPMENT = True
 
-else:
-    from os import environ
+for city in cities:
+    place = get_place(city)
+    icao = place['ICAO']
+    current_time = Timestamp.now(tz=place['TZ'])
 
-    CONSUMER_KEY = environ['CONSUMER_KEY']
-    CONSUMER_SECRET = environ['CONSUMER_SECRET']
-    ACCESS_KEY = environ['ACCESS_KEY']
-    ACCESS_SECRET = environ['ACCESS_SECRET']
-    CITY = environ['CITY']
+    if LOCAL_DEVELOPMENT:
+        # uncomment the following if you'd like to tweet from local dev
+        #
+        # from secrets import *
+        #
+        # CONSUMER_KEY = globals()['{}_CONSUMER_KEY'.format(icao)]
+        # CONSUMER_SECRET = globals()['{}_CONSUMER_SECRET'.format(icao)]
+        # ACCESS_KEY = globals()['{}_ACCESS_KEY'.format(icao)]
+        # ACCESS_SECRET = globals()['{}_ACCESS_SECRET'.format(icao)]
 
-auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
-api = tweepy.API(auth)
+        print(get_tweets(place))
 
-place = get_place(CITY)
-current_time = Timestamp.now(tz=place['TZ'])
+    elif not LOCAL_DEVELOPMENT and current_time.hour == 18:
+        # check if 6pm <= current local time < 7pm
+        # this is intended to run every hour through the Heroku scheduler
+        from os import environ
 
-# check if 6pm <= current local time < 7pm
-# this is intended to run every hour through the Heroku scheduler
-if current_time.hour == 18:
-    tweets = get_tweets(CITY)
-    for tweet in tweets:
-        api.update_status(tweet)
+        try:
+            CONSUMER_KEY = environ['{}_CONSUMER_KEY'.format(icao)]
+            CONSUMER_SECRET = environ['{}_CONSUMER_SECRET'.format(icao)]
+            ACCESS_KEY = environ['{}_ACCESS_KEY'.format(icao)]
+            ACCESS_SECRET = environ['{}_ACCESS_SECRET'.format(icao)]
+        except KeyError:
+            print("Key assignment error! One of your keys is not defined properly.")
+
+    try:
+        auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+        auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
+        api = tweepy.API(auth)
+
+        tweets = get_tweets(place)
+        for tweet in tweets:
+            api.update_status(tweet)
+    except (tweepy.error.TweepError, NameError) as e:
+        print('Not posted to Twitter! Error: {}'.format(e))

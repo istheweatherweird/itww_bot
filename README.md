@@ -65,16 +65,12 @@ If successful, you'll see them posted to the Twitter account whose keys you spec
 
 ## Setting up a bot for a new location
 
-This Twitter bot is easy to set up for any location with an entry in [this spreadsheet](https://github.com/istheweatherweird/istheweatherweird-data-hourly/blob/master/csv/stations.csv)! If you'd like to get another one added, you're welcome to open an issue in this repo with the request.
+Follow these steps to start a Twitter bot for one of the locations in the [stations spreadsheet](https://github.com/istheweatherweird/istheweatherweird-data-hourly/blob/master/csv/stations.csv):
 
-Follow these steps to start a Twitter bot for one of the locations in the above spreadsheet:
-
-1. Update your local `secrets.py` file so `CITY` matches one of the values in [this sheet's](https://github.com/istheweatherweird/istheweatherweird-data-hourly/blob/master/csv/stations.csv) `place` column.
-1. Start a new Twitter account with your desired name.
-2. Logged in as that Twitter account, visit https://developer.twitter.com/en/apps and go through the steps there to Create a New App.
-3. Once you've completed Twitter's application, you'll be prompted to create Consumer API keys and an Access Token and Access Token Secret. Add those to your local `secrets.py` file.
-4. Log into Heroku and create a new app.
-5. Go into Heroku `Settings` -> `Config Variables` and copy over your `secrets.py` file variables.
-6. Back in your Heroku `Overview` tab, add a new Installed add-on. Select Heroku Scheduler, and set it to run `python bot.py` every hour on the hour.
+1. Start a new Twitter account for your desired city. Give it a cover image, profile picture, and bio.
+2. Visit https://developer.twitter.com/en/apps, and go through the steps there to Create a New App for your new account.
+3. Once you've completed Twitter's application, you'll be prompted to create Consumer API keys and an Access Token and Access Token Secret. Add those to your local `secrets.py` file with the city's ICAO code as a prefix.
+4. Change the `cities` variable in `bots.py` to include the name of your city. This should match the way it's written in [the station spreadsheet's](https://github.com/istheweatherweird/istheweatherweird-data-hourly/blob/master/csv/stations.csv) `place` column.
+5. Log into this repo's Heroku app and go to `Settings` -> `Config Variables`. Copy over your 4 new keys from step 3.
 
 That's it! Your bot should now tweet every day at 6pm local time!
