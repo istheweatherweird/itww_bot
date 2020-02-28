@@ -216,9 +216,19 @@ def get_intervals(end_time, timedelta, start_year):
         start_year: the first year to make the interval
     Returns:
         a sequence of pandas Intervals that we will compare the current interval with
+
+    e.g. get_intervals(pd.Timestamp('2020-02-28 18:00Z'), pd.Timedelta(1, 'D'), 2017)) 
+    generates
+       Interval('2017-02-27 18:00:00', '2010-02-28 18:00:00', closed='both'),
+       Interval('2018-02-27 18:00:00', '2011-02-28 18:00:00', closed='both'),
+       Interval('2019-02-27 18:00:00', '2012-02-28 18:00:00', closed='both')
     """
     for year in range(start_year, end_time.year):
-        end = end_time.replace(year=year)
+        # For Feb 29, replacing with a non-leap year will raise an error, just ignore those years
+        try:
+            end = end_time.replace(year=year)
+        except:
+            continue
         start = end - timedelta
         yield pd.Interval(start, end, closed='both')
 
