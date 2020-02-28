@@ -234,7 +234,7 @@ def get_intervals(end_time, timedelta, start_year):
 
 def get_unique_month_days(interval_index):
     """
-    For an interval index find get a list of unique month-days
+    For an interval index get a list of unique month-days
     Returns: a DataFrame with columns month and day
     """
     dates = pd.concat([pd.Series(pd.date_range(i.left, i.right)) for i in interval_index])
