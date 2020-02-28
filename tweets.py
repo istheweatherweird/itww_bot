@@ -158,8 +158,8 @@ def _get_date_range_temps(place_id, start_time, end_time):
     Concatenate observations for a range of month-days
     Args:
         place_id: USAF-WBAN string
-        start: start date whose month-day will be used
-        end: end date whose month-day will be used
+        start_time: start date whose month-day will be used
+        end_time: end date whose month-day will be used
     Returns: a dataframe with temp and current_date columns
     """
     dates = date_range(start, end, freq='D')
