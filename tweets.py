@@ -1,6 +1,6 @@
 import requests
 import csv
-from pandas import Timestamp, Timedelta
+from pandas import Timestamp, Timedelta, read_csv, date_range, concat
 from utils import list_average, get_reader
 
 DATA_URL = 'https://www.istheweatherweird.com/istheweatherweird-data-hourly'
@@ -56,7 +56,6 @@ def get_observations(place, start_time, end_time):
 
     return observations
 
-
 # for now this is a simple average.
 # however, the observations aren't necessarily spaced equally throughout
 # the day. do something more sophisticated later!
@@ -70,65 +69,16 @@ def get_daily_temp(place, start_time, end_time):
     return average_fahrenheit
 
 def get_historical_temps(place, start_time, end_time):
-    place_id = place['USAF'] + "-" + place['WBAN']
-
-    end_day_url = "{data_url}/csv/{id}/{month}{day}.csv".format(
-        data_url=DATA_URL,
-        id=place_id,
-        month='{:02}'.format(end_time.month),
-        day='{:02}'.format(end_time.day)
-    )
-
-    end_day = get_reader(end_day_url)
-
-    if start_time.date() == end_time.date() - Timedelta(1, 'm'):
-        # use just the current day's sheet
-        current_day_offset = end_day
-    else:
-        # otherwise, we'll need to pull in two days of temperature records
-        tz_offset = start_time.hour
-
-        start_day_url = "{data_url}/csv/{id}/{month}{day}.csv".format(
-            data_url=DATA_URL,
-            id=place_id,
-            month='{:02}'.format(start_time.month),
-            day='{:02}'.format(start_time.day)
-        )
-
-        start_day_filtered = [
-            row for row
-            in get_reader(start_day_url)
-            if int(row[1]) >= tz_offset
-        ]
-
-        end_day_filtered = [
-            row for row
-            in end_day
-            if int(row[1]) < tz_offset
-        ]
-
-        current_day_offset = start_day_filtered + end_day_filtered
-
-    temps_by_year = {}
-    for row in current_day_offset:
-        [year, hour, temp] = list(row)
-        try:
-            temps_by_year[year] = temps_by_year[year] + [int(temp)]
-        except KeyError:
-            temps_by_year[year] = [int(temp)]
-
-    historical_average_temps = {
-        year: (list_average(temps) * 0.18 + 32)
-        for year, temps in temps_by_year.items()
-    }
-
-    return historical_average_temps
-
+    place_id = place['USAF'] + '-' + place['WBAN']
+    # first get full days of temps
+    df = _get_date_range_temps(place_id, 
+            start.date(), end.date())
+    # filter to necessary hours
+    return df[df.current_date.between(start, end)]
 
 def write_tweet(place, end_time, daily_temp, historical_temps):
-    total_years = len(historical_temps)
-    warmer_years = [temp for year, temp in historical_temps.items() if temp < daily_temp]
-    percent_warmer = len(warmer_years) / len(historical_temps) * 100
+    year_warmer = historical_temps.groupby('year').temp.mean() > daily_temp
+    percent_warmer = year_warmer.mean() * 100
 
     warm_bool = percent_warmer >= 50
 
@@ -202,6 +152,46 @@ def write_tweet(place, end_time, daily_temp, historical_temps):
         sentence1=sentence1,
         sentence2=sentence2,
     )
+
+def _get_date_range_temps(place_id, start_time, end_time):
+    """
+    Concatenate observations for a range of month-days
+    Args:
+        place_id: USAF-WBAN string
+        start: start date whose month-day will be used
+        end: end date whose month-day will be used
+    Returns: a dataframe with temp and current_date columns
+    """
+    dates = date_range(start, end, freq='D')
+    print(dates)
+    return concat((
+        _get_month_day_temps(place_id, date.month, date.day, date.year)
+        for date in dates))
+
+def _get_month_day_temps(place_id, month, day, current_year):
+    """
+    Get historical temperatures for the given month-day.
+    Adds a current_date column which is a timestamp with 
+        the observation's month, day, and hour but the current year.
+        This is used for filtering above.
+    Args:
+        place_id: the USAF-WBAN string to get temps for
+        month: the month number
+        day: the day number
+        current_year: the current year
+    Returns: a dataframe with temp and current_date columns
+    """
+    url = "{data_url}/csv/{id}/{month}{day}.csv".format(
+            data_url=DATA_URL,
+            id=place_id,
+            month='{:02}'.format(month),
+            day='{:02}'.format(day)
+        )
+    df = read_csv(url)
+    df['current_date'] = df.apply(lambda x: Timestamp(
+        year=current_year, month=month, day=day, hour=x.hour, tz='UTC'), axis=1)
+    df['temp'] = df.temp * 1.8 + 32
+    return df
 
 # for testing in local development
 print(get_tweets('Atlanta'))
