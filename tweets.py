@@ -1,7 +1,10 @@
 import requests
 import csv
-from pandas import Timestamp, Timedelta, read_csv, date_range, concat
+import pandas as pd
+import logging
 from utils import list_average, get_reader
+
+logging.getLogger().setLevel(logging.INFO)
 
 DATA_URL = 'https://www.istheweatherweird.com/istheweatherweird-data-hourly'
 STATIONS_URL = '{}/csv/stations.csv'.format(DATA_URL)
@@ -10,8 +13,8 @@ def get_tweets(city):
     place = get_place(city)
 
     # UTC values for 6pm local time yesterday - 6pm local time today
-    end_time = Timestamp.today(tz=place['TZ']).replace(hour=18).floor(freq='h').tz_convert(tz='UTC')
-    start_time = end_time - Timedelta(days=1)
+    end_time = pd.Timestamp.today(tz=place['TZ']).replace(hour=18).floor(freq='h').tz_convert(tz='UTC')
+    start_time = end_time - pd.Timedelta(days=1)
 
     tweets = []
 
@@ -70,14 +73,26 @@ def get_daily_temp(place, start_time, end_time):
 
 def get_historical_temps(place, start_time, end_time):
     place_id = place['USAF'] + '-' + place['WBAN']
+
+    start_year = int(place['BEGIN'][:4])
+    intervals = get_intervals(end_time, pd.Timedelta(1, 'D'), start_year)
+    interval_index = pd.IntervalIndex(list(intervals))
+
     # first get full days of temps
-    df = _get_date_range_temps(place_id, 
-            start_time.date(), end_time.date())
-    # filter to necessary hours
-    return df[df.current_date.between(start_time, end_time)]
+    month_days = get_unique_month_days(interval_index)
+    df = get_month_days_temps(place_id, month_days)
+    df['interval'] = pd.cut(df.timestamp, interval_index)
+    
+    # if a timestamp didn't lie in an interval then 'interval' is now null
+    # so dropna() filters as desired
+    df.dropna(inplace=True)
+    return df
+
 
 def write_tweet(place, end_time, daily_temp, historical_temps):
-    year_warmer = historical_temps.groupby('year').temp.mean() > daily_temp
+    averages = historical_temps.groupby('interval', observed=True).temp.mean()
+    logging.info('Average temperatures: %s' % averages)
+    year_warmer = daily_temp > averages
     percent_warmer = year_warmer.mean() * 100
 
     warm_bool = percent_warmer >= 50
@@ -153,22 +168,19 @@ def write_tweet(place, end_time, daily_temp, historical_temps):
         sentence2=sentence2,
     )
 
-def _get_date_range_temps(place_id, start, end):
+def get_month_days_temps(place_id, month_days):
     """
     Concatenate observations for a range of month-days
     Args:
         place_id: USAF-WBAN string
-        start: start date whose month-day will be used
-        end: end date whose month-day will be used
+        start: a dataframe with columns month and day as returned by get_month_days
     Returns: a dataframe with temp and current_date columns
     """
-    dates = date_range(start, end, freq='D')
-    print(dates)
-    return concat((
-        _get_month_day_temps(place_id, date.month, date.day, date.year)
-        for date in dates))
+    return pd.concat((
+        get_month_day_temps(place_id, row.month, row.day)
+        for i, row in month_days.iterrows()))
 
-def _get_month_day_temps(place_id, month, day, current_year):
+def get_month_day_temps(place_id, month, day):
     """
     Get historical temperatures for the given month-day.
     Adds a current_date column which is a timestamp with 
@@ -187,11 +199,37 @@ def _get_month_day_temps(place_id, month, day, current_year):
             month='{:02}'.format(month),
             day='{:02}'.format(day)
         )
-    df = read_csv(url)
-    df['current_date'] = df.apply(lambda x: Timestamp(
-        year=current_year, month=month, day=day, hour=x.hour, tz='UTC'), axis=1)
-    df['temp'] = df.temp * 1.8 + 32
+    df = pd.read_csv(url)
+    df['timestamp'] = df.apply(lambda x: pd.Timestamp(
+        year=x.year, month=month, day=day, hour=x.hour, tz='UTC'), axis=1)
+
+    # istheweatherweird-data-hourly stores temps in celsius without a decimal
+    df['temp'] = df.temp * .18 + 32
     return df
+
+def get_intervals(end_time, timedelta, start_year):
+    """
+    Generator for comparison time intervals
+    Args:
+        end_time: the time at which the current interval ends
+        timedelta: the length of the interval
+        start_year: the first year to make the interval
+    Returns:
+        a sequence of pandas Intervals that we will compare the current interval with
+    """
+    for year in range(start_year, end_time.year):
+        end = end_time.replace(year=year)
+        start = end - timedelta
+        yield pd.Interval(start, end, closed='both')
+
+def get_unique_month_days(interval_index):
+    """
+    For an interval index find get a list of unique month-days
+    Returns: a DataFrame with columns month and day
+    """
+    dates = pd.concat([pd.Series(pd.date_range(i.left, i.right)) for i in interval_index])
+    month_days = pd.DataFrame({'month':dates.dt.month, 'day':dates.dt.day}).drop_duplicates()
+    return month_days
 
 # for testing in local development
 print(get_tweets('Atlanta'))
