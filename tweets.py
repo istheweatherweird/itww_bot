@@ -72,9 +72,9 @@ def get_historical_temps(place, start_time, end_time):
     place_id = place['USAF'] + '-' + place['WBAN']
     # first get full days of temps
     df = _get_date_range_temps(place_id, 
-            start.date(), end.date())
+            start_time.date(), end_time.date())
     # filter to necessary hours
-    return df[df.current_date.between(start, end)]
+    return df[df.current_date.between(start_time, end_time)]
 
 def write_tweet(place, end_time, daily_temp, historical_temps):
     year_warmer = historical_temps.groupby('year').temp.mean() > daily_temp
@@ -153,13 +153,13 @@ def write_tweet(place, end_time, daily_temp, historical_temps):
         sentence2=sentence2,
     )
 
-def _get_date_range_temps(place_id, start_time, end_time):
+def _get_date_range_temps(place_id, start, end):
     """
     Concatenate observations for a range of month-days
     Args:
         place_id: USAF-WBAN string
-        start_time: start date whose month-day will be used
-        end_time: end date whose month-day will be used
+        start: start date whose month-day will be used
+        end: end date whose month-day will be used
     Returns: a dataframe with temp and current_date columns
     """
     dates = date_range(start, end, freq='D')
