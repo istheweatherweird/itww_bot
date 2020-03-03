@@ -16,11 +16,14 @@ def get_tweets(place):
 
     tweets = []
 
-    daily_temp = get_daily_temp(place, start_time, end_time)
-    historical_temps = get_historical_temps(place, start_time, end_time)
-
-    tweet = write_tweet(place, end_time, daily_temp, historical_temps)
+    tweet = write_tweet(place, start_time, end_time, timespan='day')
     tweets += [tweet]
+
+    # If it's Sunday, tweet a weekly recap
+    if end_time.tz_convert(tz=place['TZ']).day_name() == 'Sunday':
+        start_time = end_time - pd.Timedelta(days=7)
+        tweet = write_tweet(place, start_time, end_time, timespan='week')
+        tweets += [tweet]
 
     return tweets
 
@@ -57,10 +60,11 @@ def get_observations(place, start_time, end_time):
 
     return observations
 
+
 # for now this is a simple average.
 # however, the observations aren't necessarily spaced equally throughout
 # the day. do something more sophisticated later!
-def get_daily_temp(place, start_time, end_time):
+def get_observed_temp(place, start_time, end_time):
     observations = get_observations(place, start_time, end_time)
 
     temps = [temp for (timestamp, temp) in observations if temp]
@@ -68,6 +72,7 @@ def get_daily_temp(place, start_time, end_time):
     average_fahrenheit = average * 1.8 + 32
 
     return average_fahrenheit
+
 
 def get_historical_temps(place, start_time, end_time):
     place_id = place['USAF'] + '-' + place['WBAN']
@@ -87,10 +92,13 @@ def get_historical_temps(place, start_time, end_time):
     return df
 
 
-def write_tweet(place, end_time, daily_temp, historical_temps):
+def write_tweet(place, start_time, end_time, timespan):
+    observed_temp = get_observed_temp(place, start_time, end_time)
+    historical_temps = get_historical_temps(place, start_time, end_time)
+
     averages = historical_temps.groupby('interval', observed=True).temp.mean()
     logging.info('Average temperatures: %s' % averages)
-    year_warmer = daily_temp > averages
+    year_warmer = observed_temp > averages
     percent_warmer = year_warmer.mean() * 100
 
     warm_bool = percent_warmer >= 50
@@ -126,45 +134,65 @@ def write_tweet(place, end_time, daily_temp, historical_temps):
 
     emoji_list = ['❄️','🔥']
 
-    daily_temp = round(daily_temp)
-    month = end_time.tz_convert(tz=place['TZ']).month_name()
-    day = end_time.tz_convert(tz=place['TZ']).day
-
     weirdness = weirdness_levels[weirdness_level]
-    comparison = comparisons[warm_bool][(weirdness == 3)]
+    comparison = comparisons[warm_bool][(weirdness_level == 3)]
 
     if weirdness_level:
         emoji = emoji_list[warm_bool] * weirdness_level + ' '
+        if record:
+            emoji = '🚨' + emoji
     else:
         emoji = ''
 
-    sentence1 = '{emoji}The weather in {city} is {weirdness} today.'.format(
-        emoji=emoji,
-        city=place['place'],
-        weirdness=weirdness
-    )
+    sentence_dict = {
+        'emoji': emoji,
+        'record': record,
+        'city': place['place'],
+        'weirdness': weirdness,
+        'observed_temp': int(round(observed_temp)),
+        'comparison': comparison,
+        'percent_relative': percent_relative,
+        'month': end_time.tz_convert(tz=place['TZ']).month_name(),
+        'day': end_time.tz_convert(tz=place['TZ']).day,
+    }
 
-    if not record:
-        sentence2 = 'It\'s {daily_temp}ºF, {comparison} than {percent_relative}% of {month} {day} temperatures on record.'.format(
-            daily_temp=daily_temp,
-            comparison=comparison,
-            percent_relative=percent_relative,
-            month=month,
-            day=day,
-        )
-    else:
-        sentence2 = 'It\'s {daily_temp}ºF, the {comparison} {month} {day} temperature on record.'.format(
-            daily_temp=daily_temp,
-            comparison=comparison,
-            percent_relative=percent_relative,
-            month=month,
-            day=day,
+    return write_sentences(sentence_dict, timespan)
+
+
+def write_sentences(sentence_dict, timespan):
+    if timespan == 'day':
+        sentence1 = '{emoji}The weather in {city} is {weirdness} today. '.format(
+            **sentence_dict
         )
 
-    return '{sentence1} {sentence2}'.format(
+        if not sentence_dict['record']:
+            sentence2 = 'It\'s {observed_temp}ºF, {comparison} than {percent_relative}% of {month} {day} temperatures on record.'.format(
+                **sentence_dict
+            )
+        else:
+            sentence2 = 'It\'s {observed_temp}ºF, the {comparison} {month} {day} temperature on record.'.format(
+                **sentence_dict
+            )
+
+    if timespan == 'week':
+        sentence1 = ' 🗓 The weather in {city} was {weirdness} this week. \n\n'.format(
+            **sentence_dict
+        )
+
+        if not sentence_dict['record']:
+            sentence2 = '{emoji}It was {observed_temp}ºF on average, {comparison} than {percent_relative}% of weeks ending {month} {day} on record.'.format(
+                **sentence_dict
+            )
+        else:
+            sentence2 = '{emoji}It was {observed_temp}ºF on average, the {comparison} week ending {month} {day} on record.'.format(
+                **sentence_dict
+            )
+
+    return '{sentence1}{sentence2}'.format(
         sentence1=sentence1,
         sentence2=sentence2,
     )
+
 
 def get_month_days_temps(place_id, month_days):
     """
@@ -177,6 +205,7 @@ def get_month_days_temps(place_id, month_days):
     return pd.concat((
         get_month_day_temps(place_id, row.month, row.day)
         for i, row in month_days.iterrows()))
+
 
 def get_month_day_temps(place_id, month, day):
     """
@@ -205,6 +234,7 @@ def get_month_day_temps(place_id, month, day):
     df['temp'] = df.temp * .18 + 32
     return df
 
+
 def get_intervals(end_time, timedelta, start_year):
     """
     Generator for comparison time intervals
@@ -229,6 +259,7 @@ def get_intervals(end_time, timedelta, start_year):
             continue
         start = end - timedelta
         yield pd.Interval(start, end, closed='both')
+
 
 def get_unique_month_days(interval_index):
     """
