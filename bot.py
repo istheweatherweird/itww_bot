@@ -6,7 +6,12 @@ from pandas import Timestamp
 
 from tweets import get_tweets, get_place
 
-cities = ['Chicago']
+cities = [
+    'Chicago',
+    'New York City',
+    'Los Angeles',
+    'Houston'
+]
 
 LOCAL_DEVELOPMENT = False
 
