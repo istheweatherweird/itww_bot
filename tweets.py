@@ -161,16 +161,16 @@ def write_tweet(place, start_time, end_time, timespan):
 
 def write_sentences(sentence_dict, timespan):
     if timespan == 'day':
-        sentence1 = '{emoji}The weather in {city} is {weirdness} today. '.format(
+        sentence1 = '{emoji}The weather in {city} was {weirdness} today. '.format(
             **sentence_dict
         )
 
         if not sentence_dict['record']:
-            sentence2 = 'It\'s {observed_temp}ºF, {comparison} than {percent_relative}% of {month} {day} temperatures on record.'.format(
+            sentence2 = 'It was {observed_temp}ºF on average, {comparison} than {percent_relative}% of {month} {day} temperatures on record.'.format(
                 **sentence_dict
             )
         else:
-            sentence2 = 'It\'s {observed_temp}ºF, the {comparison} {month} {day} temperature on record.'.format(
+            sentence2 = 'It was {observed_temp}ºF on average, the {comparison} {month} {day} temperature on record.'.format(
                 **sentence_dict
             )
 
