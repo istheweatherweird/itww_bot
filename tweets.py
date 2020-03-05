@@ -62,9 +62,6 @@ def get_observations(place, start_time, end_time):
     return observations
 
 
-# for now this is a simple average.
-# however, the observations aren't necessarily spaced equally throughout
-# the day. do something more sophisticated later!
 def get_observed_temp(place, start_time, end_time):
     observations = get_observations(place, start_time, end_time)
 
