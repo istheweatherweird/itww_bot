@@ -16,7 +16,7 @@ This app is automatically deployed on Heroku from commits to the `master` branch
 
 To check out the logs:
 
-  ```bash
+  ```
   heroku logs --tail --app itww-bot
   ```
 
@@ -26,7 +26,7 @@ To get started, run the following from your terminal:
 
 1. Clone this repository and `cd` into your local copy.
 
-  ```bash
+  ```
   git clone git@github.com:istheweatherweird/itww_chicago.git
   cd nytquestions
   ```
@@ -35,7 +35,7 @@ To get started, run the following from your terminal:
 
 3. Rename `secrets_example.py` to `secrets.py`:
 
-  ```bash
+  ```
   mv secrets_example.py secrets.py
   ```
 
@@ -45,7 +45,7 @@ To get started, run the following from your terminal:
 
   To preview your tweet(s) locally:
 
-    ```bash
+    ```
     docker-compose run --rm app python tweets.py
     ```
 
@@ -53,7 +53,7 @@ To get started, run the following from your terminal:
 
   To test posting to Twitter:
 
-    ```bash
+    ```
     docker-compose run --rm app python bot.py
     ```
 
