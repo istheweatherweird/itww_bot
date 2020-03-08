@@ -3,6 +3,7 @@ import csv
 import pandas as pd
 import logging
 from utils import list_average, get_reader, average_interp_timestamp
+from sentry_sdk import capture_exception
 
 
 logging.getLogger().setLevel(logging.INFO)
@@ -63,10 +64,22 @@ def get_observations(place, start_time, end_time):
 
 
 def get_observed_temp(place, start_time, end_time):
+    HOURS_CHECK = 6
     observations = get_observations(place, start_time, end_time)
 
     temps = [temp for (timestamp, temp) in observations if temp]
     timestamps = [pd.Timestamp(timestamp) for (timestamp, temp) in observations if temp]
+
+    # Make sure the first observation was within HOURS_CHECK of the start time
+    # If not, raise an error so we know to skip this calculation
+    if start_time <= timestamps[-1] < start_time + pd.Timedelta(hours=HOURS_CHECK):
+        logging.info('Start time: {}'.format(start_time))
+        logging.info('First observation: {}'.format(timestamps[-1]))
+        logging.info('Observations: {}'.format(observations))
+        raise ValueError(
+            'First observation from NWS not within {} hours of start time'
+            .format(HOURS_CHECK)
+        )
 
     average = average_interp_timestamp(temps, timestamps, start_time, end_time)
     average_fahrenheit = average * 1.8 + 32
@@ -93,7 +106,12 @@ def get_historical_temps(place, start_time, end_time):
 
 
 def write_tweet(place, start_time, end_time, timespan):
-    observed_temp = get_observed_temp(place, start_time, end_time)
+    try:
+        observed_temp = get_observed_temp(place, start_time, end_time)
+    except ValueError as e:
+        capture_exception(e)
+        return
+
     historical_temps = get_historical_temps(place, start_time, end_time)
 
     averages = historical_temps.groupby('interval', observed=True).temp.mean()

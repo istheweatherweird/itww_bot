@@ -3,8 +3,11 @@ import sys
 import tweepy
 from pprint import pprint
 from pandas import Timestamp
+from sentry_sdk import init as sentry_init
 
 from tweets import get_tweets, get_place
+
+sentry_init("https://0e01f195b76649daa6ee7286f7307d2d@sentry.io/4081958")
 
 cities = [
     'Chicago',
@@ -40,7 +43,11 @@ for city in cities:
             ACCESS_KEY = environ['{}_ACCESS_KEY'.format(icao)]
             ACCESS_SECRET = environ['{}_ACCESS_SECRET'.format(icao)]
         except KeyError:
-            print("Key assignment error! One of your keys is not defined properly.")
+            print(
+                "Key assignment error! One of your keys is "
+                "not defined properly. If you're trying to run this locally, "
+                "make sure LOCAL_DEVELOPMENT=True."
+            )
 
     if current_time.hour == 18:
         # check if 6pm <= current local time < 7pm
