@@ -12,16 +12,12 @@ This is a bot by [Bea Malsky](https://beamalsky.fyi/). [istheweatherweird.com](h
 
 ## Deployment
 
-This app is deployed on Heroku. To deploy what's on the `master` branch:
-
-  ```bash
-  git push heroku master
-  ```
+This app is automatically deployed on Heroku from commits to the `master` branch.
 
 To check out the logs:
 
   ```bash
-  heroku logs --tail
+  heroku logs --tail --app itww-bot
   ```
 
 ## Running the app locally
