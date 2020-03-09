@@ -29,7 +29,10 @@ for city in cities:
         # ACCESS_KEY = globals()['{}_ACCESS_KEY'.format(icao)]
         # ACCESS_SECRET = globals()['{}_ACCESS_SECRET'.format(icao)]
 
-        print(get_tweets(place))
+        # UTC value for the current hour
+        end_time = Timestamp.now(tz='UTC').floor(freq='h')
+
+        print(get_tweets(place, end_time))
 
     else:
         from os import environ
@@ -46,6 +49,17 @@ for city in cities:
                 "make sure LOCAL_DEVELOPMENT=True."
             )
 
+        # UTC value for 6pm today
+        end_time = Timestamp.today(
+            tz=place['TZ']
+        ).replace(
+            hour=18
+        ).floor(
+            freq='h'
+        ).tz_convert(
+            tz='UTC'
+        )
+
     if current_time.hour == 18:
         # check if 6pm <= current local time < 7pm
         # this is intended to run every hour through the Heroku scheduler
@@ -54,8 +68,9 @@ for city in cities:
             auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
             api = tweepy.API(auth)
 
-            tweets = get_tweets(place)
+            tweets = get_tweets(place, end_time)
             for tweet in tweets:
-                api.update_status(tweet)
+                if tweet:
+                    api.update_status(tweet)
         except (tweepy.error.TweepError, NameError) as e:
             print('\nNot posted to Twitter!\n\nError: {}\n'.format(e))

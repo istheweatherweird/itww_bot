@@ -11,28 +11,17 @@ logging.getLogger().setLevel(logging.INFO)
 
 DATA_URL = 'https://www.istheweatherweird.com/istheweatherweird-data-hourly'
 STATIONS_URL = '{}/csv/stations.csv'.format(DATA_URL)
-MIN_COVERAGE= pd.Timedelta(4, 'h')
+MIN_COVERAGE = pd.Timedelta(4, 'h')
 DAY = pd.Timedelta(1, 'D')
 WEEK = pd.Timedelta(7, 'D')
 
-
-def get_tweets(place):
-    # UTC values for 6pm local time yesterday - 6pm local time today
-    end_time = pd.Timestamp.today(
-        tz=place['TZ']
-    ).replace(
-        hour=18
-    ).floor(
-        freq='h'
-    ).tz_convert(
-        tz='UTC'
-    )
+def get_tweets(place, end_time):
+    start_time = end_time - pd.Timedelta(days=1)
 
     tweets = []
     tweet = write_tweet(place, end_time, DAY)
 
-    if tweet:
-        tweets += [tweet]
+    tweets += [tweet]
 
     # If it's Sunday, tweet a weekly recap
     if end_time.tz_convert(tz=place['TZ']).day_name() == 'Sunday':
@@ -71,7 +60,7 @@ def get_observations(place, start_time, end_time):
         observations = pd.Series(temps, index=pd.DatetimeIndex(timestamps))
     except KeyError:
         observations = pd.Series()
-    
+
     return observations
 
 
@@ -110,6 +99,7 @@ def write_tweet(place, end_time, timespan):
         observed_temp = get_observed_temp(place, start_time, end_time)
     except ValueError as e:
         capture_exception(e)
+        print(e)
         return
 
     historical_temps = get_historical_temps(place, start_time, end_time).set_index('timestamp')
