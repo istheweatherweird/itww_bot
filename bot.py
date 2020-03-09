@@ -1,7 +1,4 @@
-import time
-import sys
 import tweepy
-from pprint import pprint
 from pandas import Timestamp
 from sentry_sdk import init as sentry_init
 
