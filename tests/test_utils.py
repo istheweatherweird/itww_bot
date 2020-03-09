@@ -1,4 +1,4 @@
-from utils import average_interp, average_interp_timeseries
+from utils import average_interp, average_interp_timeseries, get_timeseries_coverage
 import pandas as pd
 
 def test_average_interp():
@@ -23,3 +23,13 @@ def test_average_interp_timeseries():
     t0 = now - pd.Timedelta(1, 'h')
     t1 = now + pd.Timedelta(5, 'h')
     assert average_interp_timeseries(temps, t0, t1) == 12/6
+
+def test_get_timeseries_coverage():
+    now = pd.Timestamp.utcnow()
+    temps = pd.Series({
+        now: 0,
+        now + pd.Timedelta(2, 'h'): 4,
+        now + pd.Timedelta(4, 'h'): 2})
+    t0 = now - pd.Timedelta(1, 'h')
+    t1 = now + pd.Timedelta(5, 'h')
+    assert get_timeseries_coverage(temps, t0, t1) == pd.Timedelta(2, 'h')

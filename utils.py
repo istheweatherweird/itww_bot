@@ -58,6 +58,22 @@ def average_interp_timeseries(temps, t0, t1):
     x1 = to_unix_timestamp(t1)
     return average_interp(temps.tolist(), x, x0, x1)
 
+def get_timeseries_coverage(timeseries, t0, t1):
+    """
+    Calculate coverage of an interval by a time series, defined as the maximum
+        subinterval without an observation
+    Args:
+        timeseries: Series with DateTimeIndex
+        t0: interval start Timestamp
+        t1: interval end Timestamp
+        freq: desired frequency Timedelta
+    """
+    times = timeseries.index
+    times = times[(times >= t0) & (times <= t1)]
+    times = times.append(pd.DatetimeIndex([t0, t1]))
+    times = times.sort_values()
+    return(times[1:] - times[:-1]).max()
+
 def to_unix_timestamp(t):
     return (t - UNIX_TIME_START) / pd.Timedelta(1, 's')
     
