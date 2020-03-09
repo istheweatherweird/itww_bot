@@ -52,6 +52,10 @@ To get started, run the following from your terminal:
 
   If successful, you'll see generated tweets in the terminal.
 
+To run tests manually:
+
+`docker-compose run --rm app pytest`
+
 ## Setting up a bot for a new location
 
 Follow these steps to start a Twitter bot for one of the locations in the [stations spreadsheet](https://github.com/istheweatherweird/istheweatherweird-data-hourly/blob/master/csv/stations.csv):
