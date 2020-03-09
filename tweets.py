@@ -11,22 +11,22 @@ logging.getLogger().setLevel(logging.INFO)
 DATA_URL = 'https://www.istheweatherweird.com/istheweatherweird-data-hourly'
 STATIONS_URL = '{}/csv/stations.csv'.format(DATA_URL)
 MIN_COVERAGE= pd.Timedelta(4, 'h')
+DAY = pd.Timedelta(1, 'D')
+WEEK = pd.Timedelta(7, 'D')
 
 def get_tweets(place):
     # UTC values for 6pm local time yesterday - 6pm local time today
     end_time = pd.Timestamp.today(tz=place['TZ']).replace(hour=18).floor(freq='h').tz_convert(tz='UTC')
-    start_time = end_time - pd.Timedelta(days=1)
 
     tweets = []
-    tweet = write_tweet(place, start_time, end_time, timespan='day')
+    tweet = write_tweet(place, end_time, DAY)
 
     if tweet:
         tweets += [tweet]
 
     # If it's Sunday, tweet a weekly recap
     if end_time.tz_convert(tz=place['TZ']).day_name() == 'Sunday':
-        start_time = end_time - pd.Timedelta(days=7)
-        tweet = write_tweet(place, start_time, end_time, timespan='week')
+        tweet = write_tweet(place, end_time, WEEK)
         tweets += [tweet]
 
     return tweets
@@ -61,7 +61,7 @@ def get_observations(place, start_time, end_time):
         observations = pd.Series(temps, index=pd.DatetimeIndex(timestamps))
     except KeyError:
         observations = pd.Series()
-
+    
     return observations
 
 
@@ -96,16 +96,23 @@ def get_historical_temps(place, start_time, end_time):
     return df
 
 
-def write_tweet(place, start_time, end_time, timespan):
+def write_tweet(place, end_time, timespan):
+    start_time = end_time - timespan
+
     try:
         observed_temp = get_observed_temp(place, start_time, end_time)
     except ValueError as e:
         capture_exception(e)
         return
 
-    historical_temps = get_historical_temps(place, start_time, end_time)
+    historical_temps = get_historical_temps(place, start_time, end_time).set_index('timestamp')
 
-    averages = historical_temps.groupby('interval', observed=True).temp.mean()
+    def average_interp_named_timeseries(timeseries):
+        t0 = timeseries.name.left
+        t1 = timeseries.name.right
+        return utils.average_interp_timeseries(timeseries, t0, t1)
+
+    averages = historical_temps.groupby('interval', observed=True).temp.agg(average_interp_named_timeseries)
     logging.info('Average temperatures: %s' % averages)
     year_warmer = observed_temp > averages
     percent_warmer = year_warmer.mean() * 100
@@ -169,7 +176,7 @@ def write_tweet(place, start_time, end_time, timespan):
 
 
 def write_sentences(sentence_dict, timespan):
-    if timespan == 'day':
+    if timespan == DAY:
         sentence1 = '{emoji}The weather in {city} was {weirdness} today. '.format(
             **sentence_dict
         )
@@ -183,7 +190,7 @@ def write_sentences(sentence_dict, timespan):
                 **sentence_dict
             )
 
-    if timespan == 'week':
+    if timespan == WEEK:
         sentence1 = ' 🗓 The weather in {city} was {weirdness} this week. \n\n'.format(
             **sentence_dict
         )
