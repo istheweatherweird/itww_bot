@@ -1,4 +1,4 @@
-from utils import average_interp, average_interp_timestamp
+from utils import average_interp, average_interp_timeseries
 import pandas as pd
 
 def test_average_interp():
@@ -14,12 +14,12 @@ def test_average_interp():
     # averaging over a wider interval than observed
     assert average_interp(y, x, -1, 5) == 12/6
 
-def test_average_interp_timestamp():
+def test_average_interp_timeseries():
     now = pd.Timestamp.utcnow()
-    t = [now,
-         now + pd.Timedelta(2, 'h'),
-         now + pd.Timedelta(4, 'h')]
+    temps = pd.Series({
+        now: 0,
+        now + pd.Timedelta(2, 'h'): 4,
+        now + pd.Timedelta(4, 'h'): 2})
     t0 = now - pd.Timedelta(1, 'h')
     t1 = now + pd.Timedelta(5, 'h')
-    y = [0, 4, 2]
-    assert average_interp_timestamp(y, t, t0, t1) == 12/6
+    assert average_interp_timeseries(temps, t0, t1) == 12/6

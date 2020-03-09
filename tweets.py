@@ -51,23 +51,19 @@ def get_observations(place, start_time, end_time):
     response_json = requests.get(nws_request_url, params=params).json()
 
     try:
-        observations = [
-            (observation['properties']['timestamp'],
-            observation['properties']['temperature']['value'])
-            for observation in response_json['features']
+        observations = pd.Series(
+                {observation['properties']['timestamp']: 
+                    observation['properties']['temperature']['value'])
+                 for observation in response_json['features']})
         ]
     except KeyError:
-        observations = []
+        observations = pd.Series()
 
     return observations
 
 
 def get_observed_temp(place, start_time, end_time):
     observations = get_observations(place, start_time, end_time)
-
-    temps = [temp for (timestamp, temp) in observations if temp]
-    timestamps = [pd.Timestamp(timestamp) for (timestamp, temp) in observations if temp]
-
     average = average_interp_timestamp(temps, timestamps, start_time, end_time)
     average_fahrenheit = average * 1.8 + 32
 

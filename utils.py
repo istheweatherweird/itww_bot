@@ -39,17 +39,24 @@ def average_interp(y, x, x0, x1):
    
     return np.trapz(df.y, df.x) / (x1 - x0)
 
-def average_interp_timestamp(y, t, t0, t1):
+def average_interp_timeseries(temps, t0, t1):
     """
     Linearly interpolated average in time
     Converts x values to UNIX timestamps and calls average_interp()
     We use UNIX timestamps because they are standard 
         but the result is independent of this choice
+
+    Args:
+        temps: pandas Series of temperatures with DatetimeIndex
+        t0: Timestamp, left end of interval to average over
+        t1: Timestamp, right end of interval to average over
+    Returns:
+        average (float)
     """
-    x = list(map(to_unix_timestamp, t))
+    x = temps.index.map(to_unix_timestamp).tolist()
     x0 = to_unix_timestamp(t0)
     x1 = to_unix_timestamp(t1)
-    return average_interp(y, x, x0, x1)
+    return average_interp(temps.tolist(), x, x0, x1)
 
 def to_unix_timestamp(t):
     return (t - UNIX_TIME_START) / pd.Timedelta(1, 's')
