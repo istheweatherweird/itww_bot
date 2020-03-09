@@ -2,7 +2,8 @@ import requests
 import csv
 import pandas as pd
 import logging
-from utils import list_average, get_reader
+from utils import list_average, get_reader, average_interp_timestamp
+
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -61,14 +62,13 @@ def get_observations(place, start_time, end_time):
     return observations
 
 
-# for now this is a simple average.
-# however, the observations aren't necessarily spaced equally throughout
-# the day. do something more sophisticated later!
 def get_observed_temp(place, start_time, end_time):
     observations = get_observations(place, start_time, end_time)
 
     temps = [temp for (timestamp, temp) in observations if temp]
-    average = list_average(temps)
+    timestamps = [pd.Timestamp(timestamp) for (timestamp, temp) in observations if temp]
+
+    average = average_interp_timestamp(temps, timestamps, start_time, end_time)
     average_fahrenheit = average * 1.8 + 32
 
     return average_fahrenheit
@@ -247,9 +247,9 @@ def get_intervals(end_time, timedelta, start_year):
 
     e.g. get_intervals(pd.Timestamp('2020-02-28 18:00Z'), pd.Timedelta(1, 'D'), 2017))
     generates
-       Interval('2017-02-27 18:00:00', '2010-02-28 18:00:00', closed='both'),
-       Interval('2018-02-27 18:00:00', '2011-02-28 18:00:00', closed='both'),
-       Interval('2019-02-27 18:00:00', '2012-02-28 18:00:00', closed='both')
+       Interval('2017-02-27 18:00:00', '2010-02-28 18:00:00', closed='left'),
+       Interval('2018-02-27 18:00:00', '2011-02-28 18:00:00', closed='left'),
+       Interval('2019-02-27 18:00:00', '2012-02-28 18:00:00', closed='left')
     """
     for year in range(start_year, end_time.year):
         # For Feb 29, replacing with a non-leap year will raise an error, just ignore those years
@@ -258,7 +258,7 @@ def get_intervals(end_time, timedelta, start_year):
         except:
             continue
         start = end - timedelta
-        yield pd.Interval(start, end, closed='both')
+        yield pd.Interval(start, end, closed='left')
 
 
 def get_unique_month_days(interval_index):
