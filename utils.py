@@ -1,9 +1,8 @@
-import requests
-import csv
 import numpy as np
 import pandas as pd
 
 UNIX_TIME_START = pd.Timestamp(0, tz='UTC')
+
 
 def average_interp(y, x, x0, x1):
     """
@@ -22,7 +21,7 @@ def average_interp(y, x, x0, x1):
         3. Divide by (x1 - x0) to get an interpolated average
     """
     if len(y) != len(x):
-        raise ValueErrror("y and x should have same length")
+        raise ValueError("y and x should have same length")
     if x1 <= x0:
         raise ValueError("x1 should be greater than x0")
     if len(x) != len(np.unique(x)):
