@@ -2,7 +2,7 @@
 
 A Twitter bot for [istheweatherweird.com](http://www.istheweatherweird.com/), keeping an eye on various cities.
 
-Uses Python, tweepy, and Heroku. S/o to [this post](https://dev.to/emcain/how-to-set-up-a-twitter-bot-with-python-and-heroku-1n39) by [Emily Cain](https://emcain.github.io/) for the guiding method. Current data is pulled from the [National Weather Service API](https://www.weather.gov/documentation/services-web-api), and we run a check to make sure we have observations at least every 4 hours for each period we look at. For more methodolgy documentation, check out [istheweatherweird.com](http://www.istheweatherweird.com/).
+Uses Python, tweepy, and Heroku. S/o to [this post](https://dev.to/emcain/how-to-set-up-a-twitter-bot-with-python-and-heroku-1n39) by [Emily Cain](https://emcain.github.io/) for the guiding method. Current data is pulled from the [National Weather Service API](https://www.weather.gov/documentation/services-web-api), and we run a check to make sure we have observations at least every 4 hours. For more methodolgy documentation, check out [istheweatherweird.com](http://www.istheweatherweird.com/).
 
 This is a bot by [Bea Malsky](https://beamalsky.fyi/). [istheweatherweird.com](http://www.istheweatherweird.com/) was made by [Jonah Bloch-Johnson](http://www.jonah.org/) and [Eric Potash](http://k2co3.net/).
 
