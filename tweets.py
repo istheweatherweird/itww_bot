@@ -274,7 +274,7 @@ def get_intervals(end_time, timedelta, start_year):
         # For Feb 29, replacing with a non-leap year will raise an error, just ignore those years
         try:
             end = end_time.replace(year=year)
-        except: # noqa
+        except ValueError:
             continue
         start = end - timedelta
         yield pd.Interval(start, end, closed='left')
