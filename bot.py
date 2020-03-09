@@ -56,6 +56,7 @@ for city in cities:
 
             tweets = get_tweets(place)
             for tweet in tweets:
-                api.update_status(tweet)
+                if tweet:
+                    api.update_status(tweet)
         except (tweepy.error.TweepError, NameError) as e:
             print('\nNot posted to Twitter!\n\nError: {}\n'.format(e))
