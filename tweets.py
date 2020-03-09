@@ -122,7 +122,7 @@ def write_tweet(place, end_time, timespan):
 
     averages = historical_temps.groupby('interval', observed=True).apply(average_interp_observations)
     if averages.isnull().sum() > 0:
-        logging.info('Dropping %s inadaquately covered historical intervals' % averages.isnull().sum())
+        logging.warning('Dropping %s inadaquately covered historical intervals' % averages.isnull().sum())
         averages.dropna(inplace=True)
     logging.info('Average temperatures: %s' % averages)
     year_warmer = observed_temp > averages
