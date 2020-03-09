@@ -2,7 +2,7 @@
 
 A Twitter bot for [istheweatherweird.com](http://www.istheweatherweird.com/), keeping an eye on various cities.
 
-Uses Python, tweepy, and Heroku. S/o to [this post](https://dev.to/emcain/how-to-set-up-a-twitter-bot-with-python-and-heroku-1n39) by [Emily Cain](https://emcain.github.io/) for the guiding method. Current data is pulled from the [National Weather Service API](https://www.weather.gov/documentation/services-web-api), and we run a check to make sure we have observations at least every 4 hours for each period we look at. For more methodolgy documentation, check out [istheweatherweird.com](http://www.istheweatherweird.com/).
+Uses Python, tweepy, and Heroku. S/o to [this post](https://dev.to/emcain/how-to-set-up-a-twitter-bot-with-python-and-heroku-1n39) by [Emily Cain](https://emcain.github.io/) for the guiding method. Current data is pulled from the [National Weather Service API](https://www.weather.gov/documentation/services-web-api), and we run a check to make sure we have observations at least every 4 hours. For more methodolgy documentation, check out [istheweatherweird.com](http://www.istheweatherweird.com/).
 
 This is a bot by [Bea Malsky](https://beamalsky.fyi/). [istheweatherweird.com](http://www.istheweatherweird.com/) was made by [Jonah Bloch-Johnson](http://www.jonah.org/) and [Eric Potash](http://k2co3.net/).
 
@@ -27,8 +27,8 @@ To get started, run the following from your terminal:
 1. Clone this repository and `cd` into your local copy.
 
   ```
-  git clone git@github.com:istheweatherweird/itww_chicago.git
-  cd nytquestions
+  git clone git@github.com:istheweatherweird/itww_bot.git
+  cd itww_bot
   ```
 
 2. Switch the `LOCAL_DEVELOPMENT` variable in `bot.py` to `True`
@@ -39,9 +39,7 @@ To get started, run the following from your terminal:
   mv secrets_example.py secrets.py
   ```
 
-4. You'll need your own [Twitter API key](https://dototot.com/how-to-write-a-twitter-bot-with-python-and-tweepy/). Get it and fill it in to your new `secrets.py` file.
-
-5. Run the app locally!
+4. Run the app locally!
 
   To preview your tweet(s) locally, go into bot.py and set LOCAL_DEVELOPMENT to `True`. Then, run:
 
