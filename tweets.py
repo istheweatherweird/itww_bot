@@ -107,6 +107,9 @@ def write_tweet(place, end_time, timespan):
     historical_temps = get_historical_temps(place, start_time, end_time).set_index('timestamp')
 
     def average_interp_named_timeseries(timeseries):
+        """
+        In the groupby, the interval gets passed as the name of the series
+        """
         t0 = timeseries.name.left
         t1 = timeseries.name.right
         return utils.average_interp_timeseries(timeseries, t0, t1)
