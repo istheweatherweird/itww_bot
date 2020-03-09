@@ -10,11 +10,21 @@ logging.getLogger().setLevel(logging.INFO)
 
 DATA_URL = 'https://www.istheweatherweird.com/istheweatherweird-data-hourly'
 STATIONS_URL = '{}/csv/stations.csv'.format(DATA_URL)
-MIN_COVERAGE= pd.Timedelta(4, 'h')
+MIN_COVERAGE = pd.Timedelta(4, 'h')
+
 
 def get_tweets(place):
     # UTC values for 6pm local time yesterday - 6pm local time today
-    end_time = pd.Timestamp.today(tz=place['TZ']).replace(hour=18).floor(freq='h').tz_convert(tz='UTC')
+    end_time = pd.Timestamp.today(
+        tz=place['TZ']
+    ).replace(
+        hour=18
+    ).floor(
+        freq='h'
+    ).tz_convert(
+        tz='UTC'
+    )
+
     start_time = end_time - pd.Timedelta(days=1)
 
     tweets = []
@@ -44,7 +54,7 @@ def get_place(city):
 
 
 def get_observations(place, start_time, end_time):
-    nws_request_url ='https://api.weather.gov/stations/{}/observations'.format(
+    nws_request_url = 'https://api.weather.gov/stations/{}/observations'.format(
         place['ICAO']
     )
     params = {
@@ -57,7 +67,7 @@ def get_observations(place, start_time, end_time):
         timestamps = [obs['properties']['timestamp']
                       for obs in response_json['features']]
         temps = [obs['properties']['temperature']['value']
-                      for obs in response_json['features']]
+                 for obs in response_json['features']]
         observations = pd.Series(temps, index=pd.DatetimeIndex(timestamps))
     except KeyError:
         observations = pd.Series()
@@ -141,7 +151,7 @@ def write_tweet(place, start_time, end_time, timespan):
         ['warmer', 'warmest']
     ]
 
-    emoji_list = ['❄️','🔥']
+    emoji_list = ['❄️', '🔥']
 
     weirdness = weirdness_levels[weirdness_level]
     comparison = comparisons[warm_bool][(weirdness_level == 3)]
@@ -175,11 +185,11 @@ def write_sentences(sentence_dict, timespan):
         )
 
         if not sentence_dict['record']:
-            sentence2 = 'It was {observed_temp}ºF on average, {comparison} than {percent_relative}% of {month} {day} temperatures on record.'.format(
+            sentence2 = 'It was {observed_temp}ºF on average, {comparison} than {percent_relative}% of {month} {day} temperatures on record.'.format( # noqa
                 **sentence_dict
             )
         else:
-            sentence2 = 'It was {observed_temp}ºF on average, the {comparison} {month} {day} temperature on record.'.format(
+            sentence2 = 'It was {observed_temp}ºF on average, the {comparison} {month} {day} temperature on record.'.format( # noqa
                 **sentence_dict
             )
 
@@ -189,11 +199,11 @@ def write_sentences(sentence_dict, timespan):
         )
 
         if not sentence_dict['record']:
-            sentence2 = '{emoji}It was {observed_temp}ºF on average, {comparison} than {percent_relative}% of weeks ending {month} {day} on record.'.format(
+            sentence2 = '{emoji}It was {observed_temp}ºF on average, {comparison} than {percent_relative}% of weeks ending {month} {day} on record.'.format( # noqa
                 **sentence_dict
             )
         else:
-            sentence2 = '{emoji}It was {observed_temp}ºF on average, the {comparison} week ending {month} {day} on record.'.format(
+            sentence2 = '{emoji}It was {observed_temp}ºF on average, the {comparison} week ending {month} {day} on record.'.format( # noqa
                 **sentence_dict
             )
 
@@ -264,7 +274,7 @@ def get_intervals(end_time, timedelta, start_year):
         # For Feb 29, replacing with a non-leap year will raise an error, just ignore those years
         try:
             end = end_time.replace(year=year)
-        except:
+        except ValueError:
             continue
         start = end - timedelta
         yield pd.Interval(start, end, closed='left')
@@ -275,6 +285,13 @@ def get_unique_month_days(interval_index):
     For an interval index get a list of unique month-days
     Returns: a DataFrame with columns month and day
     """
-    dates = pd.concat([pd.Series(pd.date_range(i.left, i.right)) for i in interval_index])
-    month_days = pd.DataFrame({'month':dates.dt.month, 'day':dates.dt.day}).drop_duplicates()
+    dates = pd.concat(
+        [pd.Series(pd.date_range(i.left, i.right)) for i in interval_index]
+    )
+    month_days = pd.DataFrame(
+        {
+            'month': dates.dt.month,
+            'day': dates.dt.day
+        }
+    ).drop_duplicates()
     return month_days
