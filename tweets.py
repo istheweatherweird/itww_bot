@@ -1,6 +1,7 @@
 import requests
 import csv
 import pandas as pd
+from numpy import nan
 import logging
 from sentry_sdk import capture_exception
 import utils
@@ -121,7 +122,7 @@ def write_tweet(place, end_time, timespan):
         t1 = timeseries.name.right
         covered = check_timeseries_coverage(timeseries, t0, t1, False)
         if not covered:
-            return np.nan
+            return nan
         else:
             return utils.average_interp_timeseries(timeseries, t0, t1)
 
@@ -314,7 +315,7 @@ def check_timeseries_coverage(timeseries, start_time, end_time, raise_error):
     A wrapper for utils.get_timeseries_coverage() that handles logging and errors
     """
     coverage = utils.get_timeseries_coverage(timeseries, start_time, end_time)
-    logging.info("Coverage: %s" % coverage)
+    logging.info("Coverage for [%s, %s]: %s" % (start_time, end_time, coverage))
     if coverage > MIN_COVERAGE and raise_error:
         raise ValueError("Insufficient observational coverage: %s" % coverage)
     return coverage <= MIN_COVERAGE
