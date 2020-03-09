@@ -30,8 +30,7 @@ def get_tweets(place):
     tweets = []
     tweet = write_tweet(place, start_time, end_time, timespan='day')
 
-    if tweet:
-        tweets += [tweet]
+    tweets += [tweet]
 
     # If it's Sunday, tweet a weekly recap
     if end_time.tz_convert(tz=place['TZ']).day_name() == 'Sunday':
@@ -111,6 +110,7 @@ def write_tweet(place, start_time, end_time, timespan):
         observed_temp = get_observed_temp(place, start_time, end_time)
     except ValueError as e:
         capture_exception(e)
+        print(e)
         return
 
     historical_temps = get_historical_temps(place, start_time, end_time)
