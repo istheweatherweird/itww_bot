@@ -27,8 +27,8 @@ To get started, run the following from your terminal:
 1. Clone this repository and `cd` into your local copy.
 
   ```
-  git clone git@github.com:istheweatherweird/itww_chicago.git
-  cd nytquestions
+  git clone git@github.com:istheweatherweird/itww_bot.git
+  cd itww_bot
   ```
 
 2. Switch the `LOCAL_DEVELOPMENT` variable in `bot.py` to `True`
@@ -39,9 +39,7 @@ To get started, run the following from your terminal:
   mv secrets_example.py secrets.py
   ```
 
-4. You'll need your own [Twitter API key](https://dototot.com/how-to-write-a-twitter-bot-with-python-and-tweepy/). Get it and fill it in to your new `secrets.py` file.
-
-5. Run the app locally!
+4. Run the app locally!
 
   To preview your tweet(s) locally, go into bot.py and set LOCAL_DEVELOPMENT to `True`. Then, run:
 
