@@ -66,12 +66,7 @@ def get_observations(place, start_time, end_time):
 def get_observed_temp(place, start_time, end_time):
     observations = get_observations(place, start_time, end_time)
 
-    coverage = utils.get_timeseries_coverage(observations, start_time, end_time)
-    if coverage > MIN_COVERAGE:
-        raise ValueError("Insufficient observational coverage: %s" % coverage)
-    else:
-        logging.info("Coverage: %s" % coverage)
-
+    check_timeseries_coverage(observations, start_time, end_time, True)
     average = utils.average_interp_timeseries(observations, start_time, end_time)
     average_fahrenheit = average * 1.8 + 32
 
@@ -114,9 +109,16 @@ def write_tweet(place, end_time, timespan):
         """
         t0 = timeseries.name.left
         t1 = timeseries.name.right
-        return utils.average_interp_timeseries(timeseries, t0, t1)
+        covered = check_timeseries_coverage(timeseries, t0, t1, False)
+        if not covered:
+            return np.nan
+        else:
+            return utils.average_interp_timeseries(timeseries, t0, t1)
 
     averages = historical_temps.groupby('interval', observed=True).temp.agg(average_interp_named_timeseries)
+    if averages.isnull().sum() > 0:
+        logging.info('Dropping %s inadaquately covered historical intervals' % averages.isnull().sum())
+        averages.dropna(inplace=True)
     logging.info('Average temperatures: %s' % averages)
     year_warmer = observed_temp > averages
     percent_warmer = year_warmer.mean() * 100
@@ -296,3 +298,13 @@ def get_unique_month_days(interval_index):
         }
     ).drop_duplicates()
     return month_days
+
+def check_timeseries_coverage(timeseries, start_time, end_time, raise_error):
+    """
+    A wrapper for utils.get_timeseries_coverage() that handles logging and errors
+    """
+    coverage = utils.get_timeseries_coverage(timeseries, start_time, end_time)
+    logging.info("Coverage: %s" % coverage)
+    if coverage > MIN_COVERAGE and raise_error:
+        raise ValueError("Insufficient observational coverage: %s" % coverage)
+    return coverage <= MIN_COVERAGE
