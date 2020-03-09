@@ -46,6 +46,7 @@ To get started, run the following from your terminal:
   To preview your tweet(s) locally, go into bot.py and set LOCAL_DEVELOPMENT to `True`. Then, run:
 
   ```
+  docker-compose build
   docker-compose run --rm app python bot.py
   ```
 
