@@ -2,13 +2,15 @@ import requests
 import csv
 import pandas as pd
 import logging
-from utils import list_average, get_reader, average_interp_timestamp
+from sentry_sdk import capture_exception
+import utils
 
 
 logging.getLogger().setLevel(logging.INFO)
 
 DATA_URL = 'https://www.istheweatherweird.com/istheweatherweird-data-hourly'
 STATIONS_URL = '{}/csv/stations.csv'.format(DATA_URL)
+MIN_COVERAGE= pd.Timedelta(4, 'h')
 
 def get_tweets(place):
     # UTC values for 6pm local time yesterday - 6pm local time today
@@ -16,9 +18,10 @@ def get_tweets(place):
     start_time = end_time - pd.Timedelta(days=1)
 
     tweets = []
-
     tweet = write_tweet(place, start_time, end_time, timespan='day')
-    tweets += [tweet]
+
+    if tweet:
+        tweets += [tweet]
 
     # If it's Sunday, tweet a weekly recap
     if end_time.tz_convert(tz=place['TZ']).day_name() == 'Sunday':
@@ -51,13 +54,13 @@ def get_observations(place, start_time, end_time):
     response_json = requests.get(nws_request_url, params=params).json()
 
     try:
-        observations = [
-            (observation['properties']['timestamp'],
-            observation['properties']['temperature']['value'])
-            for observation in response_json['features']
-        ]
+        timestamps = [obs['properties']['timestamp']
+                      for obs in response_json['features']]
+        temps = [obs['properties']['temperature']['value']
+                      for obs in response_json['features']]
+        observations = pd.Series(temps, index=pd.DatetimeIndex(timestamps))
     except KeyError:
-        observations = []
+        observations = pd.Series()
 
     return observations
 
@@ -65,10 +68,11 @@ def get_observations(place, start_time, end_time):
 def get_observed_temp(place, start_time, end_time):
     observations = get_observations(place, start_time, end_time)
 
-    temps = [temp for (timestamp, temp) in observations if temp]
-    timestamps = [pd.Timestamp(timestamp) for (timestamp, temp) in observations if temp]
+    coverage = utils.get_timeseries_coverage(observations, start_time, end_time)
+    if coverage > MIN_COVERAGE:
+        raise ValueError("Insufficient observational coverage: %s" % coverage)
 
-    average = average_interp_timestamp(temps, timestamps, start_time, end_time)
+    average = utils.average_interp_timeseries(observations, start_time, end_time)
     average_fahrenheit = average * 1.8 + 32
 
     return average_fahrenheit
@@ -93,7 +97,12 @@ def get_historical_temps(place, start_time, end_time):
 
 
 def write_tweet(place, start_time, end_time, timespan):
-    observed_temp = get_observed_temp(place, start_time, end_time)
+    try:
+        observed_temp = get_observed_temp(place, start_time, end_time)
+    except ValueError as e:
+        capture_exception(e)
+        return
+
     historical_temps = get_historical_temps(place, start_time, end_time)
 
     averages = historical_temps.groupby('interval', observed=True).temp.mean()
