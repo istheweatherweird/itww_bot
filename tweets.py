@@ -13,18 +13,7 @@ STATIONS_URL = '{}/csv/stations.csv'.format(DATA_URL)
 MIN_COVERAGE = pd.Timedelta(4, 'h')
 
 
-def get_tweets(place):
-    # UTC values for 6pm local time yesterday - 6pm local time today
-    end_time = pd.Timestamp.today(
-        tz=place['TZ']
-    ).replace(
-        hour=18
-    ).floor(
-        freq='h'
-    ).tz_convert(
-        tz='UTC'
-    )
-
+def get_tweets(place, end_time):
     start_time = end_time - pd.Timedelta(days=1)
 
     tweets = []
