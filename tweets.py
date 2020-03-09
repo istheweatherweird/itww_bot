@@ -1,6 +1,7 @@
 import requests
 import csv
 import pandas as pd
+from numpy import nan
 import logging
 from sentry_sdk import capture_exception
 import utils
@@ -11,20 +12,20 @@ logging.getLogger().setLevel(logging.INFO)
 DATA_URL = 'https://www.istheweatherweird.com/istheweatherweird-data-hourly'
 STATIONS_URL = '{}/csv/stations.csv'.format(DATA_URL)
 MIN_COVERAGE = pd.Timedelta(4, 'h')
-
+DAY = pd.Timedelta(1, 'D')
+WEEK = pd.Timedelta(7, 'D')
 
 def get_tweets(place, end_time):
     start_time = end_time - pd.Timedelta(days=1)
 
     tweets = []
-    tweet = write_tweet(place, start_time, end_time, timespan='day')
+    tweet = write_tweet(place, end_time, DAY)
 
     tweets += [tweet]
 
     # If it's Sunday, tweet a weekly recap
     if end_time.tz_convert(tz=place['TZ']).day_name() == 'Sunday':
-        start_time = end_time - pd.Timedelta(days=7)
-        tweet = write_tweet(place, start_time, end_time, timespan='week')
+        tweet = write_tweet(place, end_time, WEEK)
         tweets += [tweet]
 
     return tweets
@@ -66,10 +67,7 @@ def get_observations(place, start_time, end_time):
 def get_observed_temp(place, start_time, end_time):
     observations = get_observations(place, start_time, end_time)
 
-    coverage = utils.get_timeseries_coverage(observations, start_time, end_time)
-    if coverage > MIN_COVERAGE:
-        raise ValueError("Insufficient observational coverage: %s" % coverage)
-
+    check_timeseries_coverage(observations, start_time, end_time, True)
     average = utils.average_interp_timeseries(observations, start_time, end_time)
     average_fahrenheit = average * 1.8 + 32
 
@@ -94,7 +92,9 @@ def get_historical_temps(place, start_time, end_time):
     return df
 
 
-def write_tweet(place, start_time, end_time, timespan):
+def write_tweet(place, end_time, timespan):
+    start_time = end_time - timespan
+
     try:
         observed_temp = get_observed_temp(place, start_time, end_time)
     except ValueError as e:
@@ -102,9 +102,28 @@ def write_tweet(place, start_time, end_time, timespan):
         print(e)
         return
 
-    historical_temps = get_historical_temps(place, start_time, end_time)
+    historical_temps = get_historical_temps(place, start_time, end_time).set_index('timestamp')
 
-    averages = historical_temps.groupby('interval', observed=True).temp.mean()
+    def average_interp_observations(observations):
+        """
+        Call average_interp_timeseries and do coverage checking for historical interval
+        """
+        if len(observations) == 0:
+            return nan
+        interval = observations['interval'].values[0]
+        t0 = interval.left
+        t1 = interval.right
+        timeseries = observations.temp
+        covered = check_timeseries_coverage(timeseries, t0, t1, False)
+        if not covered:
+            return nan
+        else:
+            return utils.average_interp_timeseries(timeseries, t0, t1)
+
+    averages = historical_temps.groupby('interval', observed=True).apply(average_interp_observations)
+    if averages.isnull().sum() > 0:
+        logging.warning('Dropping %s inadaquately covered historical intervals' % averages.isnull().sum())
+        averages.dropna(inplace=True)
     logging.info('Average temperatures: %s' % averages)
     year_warmer = observed_temp > averages
     percent_warmer = year_warmer.mean() * 100
@@ -168,7 +187,7 @@ def write_tweet(place, start_time, end_time, timespan):
 
 
 def write_sentences(sentence_dict, timespan):
-    if timespan == 'day':
+    if timespan == DAY:
         sentence1 = '{emoji}The weather in {city} was {weirdness} today. '.format(
             **sentence_dict
         )
@@ -182,7 +201,7 @@ def write_sentences(sentence_dict, timespan):
                 **sentence_dict
             )
 
-    if timespan == 'week':
+    if timespan == WEEK:
         sentence1 = ' 🗓 The weather in {city} was {weirdness} this week. \n\n'.format(
             **sentence_dict
         )
@@ -284,3 +303,13 @@ def get_unique_month_days(interval_index):
         }
     ).drop_duplicates()
     return month_days
+
+def check_timeseries_coverage(timeseries, start_time, end_time, raise_error):
+    """
+    A wrapper for utils.get_timeseries_coverage() that handles logging and errors
+    """
+    coverage = utils.get_timeseries_coverage(timeseries, start_time, end_time)
+    logging.info("Coverage for [%s, %s]: %s" % (start_time, end_time, coverage))
+    if coverage > MIN_COVERAGE and raise_error:
+        raise ValueError("Insufficient observational coverage: %s" % coverage)
+    return coverage <= MIN_COVERAGE
