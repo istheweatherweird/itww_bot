@@ -114,19 +114,23 @@ def write_tweet(place, end_time, timespan):
 
     historical_temps = get_historical_temps(place, start_time, end_time).set_index('timestamp')
 
-    def average_interp_named_timeseries(timeseries):
+    def average_interp_observations(observations):
         """
-        In the groupby, the interval gets passed as the name of the series
+        Call average_interp_timeseries and do coverage checking for historical interval
         """
-        t0 = timeseries.name.left
-        t1 = timeseries.name.right
+        if len(observations) == 0:
+            return nan
+        interval = observations['interval'].values[0]
+        t0 = interval.left
+        t1 = interval.right
+        timeseries = observations.temp
         covered = check_timeseries_coverage(timeseries, t0, t1, False)
         if not covered:
             return nan
         else:
             return utils.average_interp_timeseries(timeseries, t0, t1)
 
-    averages = historical_temps.groupby('interval', observed=True).temp.agg(average_interp_named_timeseries)
+    averages = historical_temps.groupby('interval', observed=True).apply(average_interp_observations)
     if averages.isnull().sum() > 0:
         logging.info('Dropping %s inadaquately covered historical intervals' % averages.isnull().sum())
         averages.dropna(inplace=True)
