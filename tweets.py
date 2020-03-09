@@ -69,6 +69,8 @@ def get_observed_temp(place, start_time, end_time):
     coverage = utils.get_timeseries_coverage(observations, start_time, end_time)
     if coverage > MIN_COVERAGE:
         raise ValueError("Insufficient observational coverage: %s" % coverage)
+    else:
+        logging.info("Coverage: %s" % coverage)
 
     average = utils.average_interp_timeseries(observations, start_time, end_time)
     average_fahrenheit = average * 1.8 + 32
