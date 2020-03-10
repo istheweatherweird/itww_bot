@@ -1,6 +1,4 @@
 from pandas import Timestamp
-
-from bot import LOCAL_DEVELOPMENT
 from tweets import get_place, get_tweets
 
 
