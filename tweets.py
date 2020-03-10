@@ -15,9 +15,8 @@ MIN_COVERAGE = pd.Timedelta(4, 'h')
 DAY = pd.Timedelta(1, 'D')
 WEEK = pd.Timedelta(7, 'D')
 
-def get_tweets(place, end_time):
-    start_time = end_time - pd.Timedelta(days=1)
 
+def get_tweets(place, end_time):
     tweets = []
     tweet = write_tweet(place, end_time, DAY)
 
@@ -54,9 +53,13 @@ def get_observations(place, start_time, end_time):
 
     try:
         timestamps = [obs['properties']['timestamp']
-                      for obs in response_json['features']]
+                      for obs in response_json['features']
+                      if obs['properties']['temperature']['value']
+                      ]
         temps = [obs['properties']['temperature']['value']
-                 for obs in response_json['features']]
+                 for obs in response_json['features']
+                 if obs['properties']['temperature']['value']
+                 ]
         observations = pd.Series(temps, index=pd.DatetimeIndex(timestamps))
     except KeyError:
         observations = pd.Series()
@@ -303,6 +306,7 @@ def get_unique_month_days(interval_index):
         }
     ).drop_duplicates()
     return month_days
+
 
 def check_timeseries_coverage(timeseries, start_time, end_time, raise_error):
     """
