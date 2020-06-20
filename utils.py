@@ -53,7 +53,8 @@ def average_interp_timeseries(temps, t0, t1):
     x = temps.index.map(to_unix_timestamp).tolist()
     x0 = to_unix_timestamp(t0)
     x1 = to_unix_timestamp(t1)
-    return average_interp(temps.tolist(), x, x0, x1)
+    temps_float = [float(x) for x in temps.tolist()]
+    return average_interp(temps_float, x, x0, x1)
 
 
 def get_timeseries_coverage(timeseries, t0, t1):
