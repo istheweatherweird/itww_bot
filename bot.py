@@ -62,7 +62,7 @@ for city in cities:
 
     if current_time.hour == 18:
         # check if 6pm <= current local time < 7pm
-        # this is intended to run every hour through the Heroku scheduler
+        # this is intended to run every hour
         try:
             auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
             auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
