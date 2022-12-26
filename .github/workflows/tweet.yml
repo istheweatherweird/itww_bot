@@ -22,3 +22,20 @@ jobs:
         pip install -r requirements.txt
     - name: Send out tweets
       run: python bot.py
+      env:
+        KIAH_ACCESS_KEY: ${{ secrets.KIAH_ACCESS_KEY }}
+        KIAH_ACCESS_SECRET: ${{ secrets.KIAH_ACCESS_SECRET }}
+        KIAH_CONSUMER_KEY: ${{ secrets.KIAH_CONSUMER_KEY }}
+        KIAH_CONSUMER_SECRET: ${{ secrets.KIAH_CONSUMER_SECRET }}
+        KJFK_ACCESS_KEY: ${{ secrets.KJFK_ACCESS_KEY }}
+        KJFK_ACCESS_SECRET: ${{ secrets.KJFK_ACCESS_SECRET }}
+        KJFK_CONSUMER_KEY: ${{ secrets.KJFK_CONSUMER_KEY }}
+        KJFK_CONSUMER_SECRET: ${{ secrets.KJFK_CONSUMER_SECRET }}
+        KLAX_ACCESS_KEY: ${{ secrets.KLAX_ACCESS_KEY }}
+        KLAX_ACCESS_SECRET: ${{ secrets.KLAX_ACCESS_SECRET }}
+        KLAX_CONSUMER_KEY: ${{ secrets.KLAX_CONSUMER_KEY }}
+        KLAX_CONSUMER_SECRET: ${{ secrets.KLAX_CONSUMER_SECRET }}
+        KORD_ACCESS_KEY: ${{ secrets.KORD_ACCESS_KEY }}
+        KORD_ACCESS_SECRET: ${{ secrets.KORD_ACCESS_SECRET }}
+        KORD_CONSUMER_KEY: ${{ secrets.KORD_CONSUMER_KEY }}
+        KORD_CONSUMER_SECRET: ${{ secrets.KORD_CONSUMER_SECRET }}
