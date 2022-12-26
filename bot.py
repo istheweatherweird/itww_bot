@@ -44,9 +44,9 @@ for city in cities:
             ACCESS_SECRET = environ['{}_ACCESS_SECRET'.format(icao)]
         except KeyError:
             print(
-                "Key assignment error! One of your keys is "
+                "Key assignment error for {}! One of your keys is "
                 "not defined properly. If you're trying to run this locally, "
-                "make sure LOCAL_DEVELOPMENT=True."
+                "make sure LOCAL_DEVELOPMENT=True.".format(icao)
             )
 
         # UTC value for 6pm today
@@ -62,7 +62,7 @@ for city in cities:
 
     if current_time.hour == 18:
         # check if 6pm <= current local time < 7pm
-        # this is intended to run every hour through the Heroku scheduler
+        # this is intended to run every hour
         try:
             auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
             auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
