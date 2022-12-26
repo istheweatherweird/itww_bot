@@ -44,9 +44,9 @@ for city in cities:
             ACCESS_SECRET = environ['{}_ACCESS_SECRET'.format(icao)]
         except KeyError:
             print(
-                "Key assignment error! One of your keys is "
+                "Key assignment error for {}! One of your keys is "
                 "not defined properly. If you're trying to run this locally, "
-                "make sure LOCAL_DEVELOPMENT=True."
+                "make sure LOCAL_DEVELOPMENT=True.".format(icao)
             )
 
         # UTC value for 6pm today
